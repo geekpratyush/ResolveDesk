@@ -124,6 +124,14 @@
                             <i class="fa-solid fa-code w-5"></i>
                             <span>Angular 17 & SLA Stats</span>
                         </button>
+                        <button onclick="switchTab('codeflow')" id="btn-codeflow" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded text-sm font-semibold transition duration-150 text-slate-600 hover:text-corp-blue hover:bg-white border border-transparent hover:border-corp-border">
+                            <i class="fa-solid fa-arrows-spin w-5"></i>
+                            <span>Detailed Code Flow</span>
+                        </button>
+                        <button onclick="switchTab('designpatterns')" id="btn-designpatterns" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded text-sm font-semibold transition duration-150 text-slate-600 hover:text-corp-blue hover:bg-white border border-transparent hover:border-corp-border">
+                            <i class="fa-solid fa-wand-magic-sparkles w-5"></i>
+                            <span>Design Patterns</span>
+                        </button>
                     </nav>
                 </div>
 
@@ -385,6 +393,158 @@ sequenceDiagram
                             <li><strong>Category Progress Bars:</strong> Dynamic width bindings `[style.width.%]="item.percentage"` map directly to properties computed by our Signals workflow.</li>
                             <li><strong>Priority indicators:</strong> Simple border-top colour cards display SLA volumes with zero extra paint cycles.</li>
                         </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: DETAILED CODE FLOW -->
+            <div id="tab-codeflow" class="tab-content hidden space-y-8">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-corp-navy mb-2">End-to-End Code Flow Walkthrough</h2>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        This workflow outlines the exact sequence of network requests, routing rules, and backend message executions that power critical client-server operations.
+                    </p>
+                </div>
+
+                <!-- Part 1: Authentication -->
+                <div class="space-y-4">
+                    <h3 class="text-base font-bold text-corp-navy"><i class="fa-solid fa-key mr-2 text-corp-blue"></i>1. User Authentication (Login Flow)</h3>
+                    <p class="text-xs text-slate-500">
+                        Tracks how login requests flow from the Angular 17 interface through the API Gateway, reaching ASP.NET Core Identity to produce a JWT.
+                    </p>
+                    
+                    <pre class="mermaid">
+graph LR
+    UI[Angular UI<br>Port: 4300] -->|POST /api/auth/login| GW[YARP Gateway<br>Port: 5100]
+    GW -->|Proxy Cluster Route| ID[Identity Service<br>Port: 5101]
+    ID -->|Verify Credentials| DB[(SQLite: identity.db)]
+    ID -->|Generate HS256 JWT| UI
+                    </pre>
+
+                    <div class="bg-slate-900 p-5 rounded font-mono text-xs text-blue-300 space-y-2 overflow-x-auto shadow-inner">
+                        <div class="text-slate-500">// 1. Client Dispatches Credentials (src/ResolveDesk.UI/src/app/services/auth.service.ts)</div>
+                        <div>login(email: string, password: string) {</div>
+                        <div class="pl-4">return this.http.post&lt;any&gt;('http://localhost:5100/api/auth/login', { email, password });</div>
+                        <div>}</div>
+                        <div class="text-slate-500 pt-2">// 2. Gateway Proxy Forwarding (src/ResolveDesk.Gateway/appsettings.json)</div>
+                        <div>"auth-route": {</div>
+                        <div class="pl-4">"ClusterId": "identity-cluster",</div>
+                        <div class="pl-4">"Match": { "Path": "/api/auth/{**catch-all}" }</div>
+                        <div>}</div>
+                        <div class="text-slate-500 pt-2">// 3. Backend Verification (src/ResolveDesk.Services.Identity/Controllers/AuthController.cs)</div>
+                        <div>var user = await _userManager.FindByEmailAsync(model.Email);</div>
+                        <div>if (user != null && await _userManager.CheckPasswordAsync(user, model.Password)) {</div>
+                        <div class="pl-4">var token = _tokenService.GenerateToken(user, roles);</div>
+                        <div class="pl-4">return Ok(new { success = true, token });</div>
+                        <div>}</div>
+                    </div>
+                </div>
+
+                <!-- Part 2: Ticket Creation -->
+                <div class="space-y-4 pt-4 border-t border-corp-border">
+                    <h3 class="text-base font-bold text-corp-navy"><i class="fa-solid fa-ticket-simple mr-2 text-corp-blue"></i>2. Ticket Creation & Eventing</h3>
+                    <p class="text-xs text-slate-500">
+                        Details client submission, reverse proxying, JWT middleware authentication, SQLite write, and the MassTransit InMemory notification broadcast.
+                    </p>
+                    
+                    <pre class="mermaid">
+graph TD
+    UI[Angular UI<br>Port: 4300] -->|POST /api/tickets| GW[YARP Gateway<br>Port: 5100]
+    GW -->|Proxy Route| TC[Ticket Core Service<br>Port: 5103]
+    TC -->|Save Ticket| DB[(SQLite: tickets.db)]
+    TC -->|Publish event| EB[MassTransit Bus<br>InMemory]
+    EB -->|Deliver event| Consumer[TicketCreatedConsumer]
+                    </pre>
+
+                    <div class="bg-slate-900 p-5 rounded font-mono text-xs text-blue-300 space-y-2 overflow-x-auto shadow-inner">
+                        <div class="text-slate-500">// 1. Save Ticket & Publish Event (src/ResolveDesk.Services.TicketCore/Controllers/TicketsController.cs)</div>
+                        <div>_context.Tickets.Add(ticket);</div>
+                        <div>await _context.SaveChangesAsync();</div>
+                        <div>await _publishEndpoint.Publish&lt;ITicketCreatedEvent&gt;(new { TicketId = ticket.Id, Title = ticket.Title });</div>
+                        <div class="text-slate-500 pt-2">// 2. Asynchronous Event Consumer (src/ResolveDesk.Services.TicketCore/Consumers/TicketCreatedConsumer.cs)</div>
+                        <div>public class TicketCreatedConsumer : IConsumer&lt;ITicketCreatedEvent&gt; {</div>
+                        <div class="pl-4">public async Task Consume(ConsumeContext&lt;ITicketCreatedEvent&gt; context) {</div>
+                        <div class="pl-8">_logger.LogInformation($"Notification: Ticket #{context.Message.TicketId} Created successfully.");</div>
+                        <div class="pl-4">}</div>
+                        <div>}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: DESIGN PATTERNS -->
+            <div id="tab-designpatterns" class="tab-content hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-corp-navy mb-2">Design Patterns Portfolio</h2>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        To maintain modularity and high performance, ResolveDesk utilizes industry-standard software engineering patterns across both the .NET backend and Angular frontend.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Clean Architecture -->
+                    <div class="p-5 rounded border border-corp-border bg-corp-bg">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <span class="text-corp-blue text-lg font-bold"><i class="fa-solid fa-cube"></i></span>
+                            <h4 class="font-bold text-corp-navy text-sm">Clean Architecture Boundary</h4>
+                        </div>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Decouples domain entity objects (e.g. <code>Ticket.cs</code>) from underlying infrastructures. Databases can be migrated or swapped without rewriting business workflows.
+                        </p>
+                    </div>
+
+                    <!-- API Gateway -->
+                    <div class="p-5 rounded border border-corp-border bg-corp-bg">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <span class="text-corp-blue text-lg font-bold"><i class="fa-solid fa-network-wired"></i></span>
+                            <h4 class="font-bold text-corp-navy text-sm">API Gateway Pattern (YARP)</h4>
+                        </div>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Provides a unified, secure gateway URL for client consumption, resolving CORS challenges and abstracting internal service addresses.
+                        </p>
+                    </div>
+
+                    <!-- Repository Pattern -->
+                    <div class="p-5 rounded border border-corp-border bg-corp-bg">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <span class="text-corp-blue text-lg font-bold"><i class="fa-solid fa-folder-open"></i></span>
+                            <h4 class="font-bold text-corp-navy text-sm">Repository Pattern</h4>
+                        </div>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Exposes collection contracts (interfaces) for data persistence. Separates query assemblies from service behaviors, enabling straightforward mocking in unit tests.
+                        </p>
+                    </div>
+
+                    <!-- Publish-Subscribe -->
+                    <div class="p-5 rounded border border-corp-border bg-corp-bg">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <span class="text-corp-blue text-lg font-bold"><i class="fa-solid fa-arrows-split-up-and-left"></i></span>
+                            <h4 class="font-bold text-corp-navy text-sm">Publish-Subscribe (MassTransit)</h4>
+                        </div>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Enables reactive microservice actions. Event producers publish messages onto the bus without needing reference to their destination consumers.
+                        </p>
+                    </div>
+
+                    <!-- Angular State Signals -->
+                    <div class="p-5 rounded border border-corp-border bg-corp-bg">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <span class="text-corp-blue text-lg font-bold"><i class="fa-solid fa-bolt"></i></span>
+                            <h4 class="font-bold text-corp-navy text-sm">Reactive State Stores (Signals)</h4>
+                        </div>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Maintains high-performance frontend state loops using native Angular 17 Signals. Automatically recalculates metrics (SLA durations, ticket quantities) only when the direct data dependencies change.
+                        </p>
+                    </div>
+
+                    <!-- Intercepting Filter -->
+                    <div class="p-5 rounded border border-corp-border bg-corp-bg">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <span class="text-corp-blue text-lg font-bold"><i class="fa-solid fa-filter"></i></span>
+                            <h4 class="font-bold text-corp-navy text-sm">Intercepting Filter (HTTP Interceptor)</h4>
+                        </div>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Interceptors act as pre-processors for client requests, automatically appending authorization headers (Bearer Token) before network dispatch.
+                        </p>
                     </div>
                 </div>
             </div>
