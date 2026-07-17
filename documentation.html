@@ -697,6 +697,21 @@ sequenceDiagram
             activeBtn.classList.remove('text-slate-600', 'hover:text-corp-blue', 'hover:bg-white', 'border-transparent', 'hover:border-corp-border');
             activeBtn.classList.add('bg-corp-blue', 'text-white', 'shadow');
         }
+
+        // Render mermaid diagrams in the initially visible tab on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const visibleTabs = document.querySelectorAll('.tab-content:not(.hidden)');
+            visibleTabs.forEach(tab => {
+                const lazyMermaids = tab.querySelectorAll('.mermaid-lazy');
+                if (lazyMermaids.length > 0) {
+                    lazyMermaids.forEach(el => {
+                        el.classList.remove('mermaid-lazy');
+                        el.classList.add('mermaid');
+                    });
+                    mermaid.run({ nodes: Array.from(lazyMermaids) });
+                }
+            });
+        });
     </script>
 </body>
 </html>
