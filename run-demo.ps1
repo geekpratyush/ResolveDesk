@@ -37,7 +37,7 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
     Write-Error "npm is required but not installed."
     Exit 1
 }
-Write-Host "✓ dotnet and npm verified." -ForegroundColor Green
+Write-Host "[OK] dotnet and npm verified." -ForegroundColor Green
 
 # Build Backend Solution
 Write-Host "Building backend .NET projects..." -ForegroundColor Gray
@@ -76,10 +76,10 @@ Pop-Location
 Write-Host "========================================================" -ForegroundColor Green
 Write-Host "ResolveDesk is starting up! Access the apps below:" -ForegroundColor Green
 Write-Host "--------------------------------------------------------" -ForegroundColor Green
-Write-Host "  ➜ Angular UI:       http://localhost:4200" -ForegroundColor Cyan
-Write-Host "  ➜ Gateway API:      http://localhost:5000" -ForegroundColor Cyan
-Write-Host "  ➜ Identity API:     http://localhost:5001" -ForegroundColor Cyan
-Write-Host "  ➜ Ticket Core API:  http://localhost:5002" -ForegroundColor Cyan
+Write-Host "  -> Angular UI:       http://localhost:4200" -ForegroundColor Cyan
+Write-Host "  -> Gateway API:      http://localhost:5000" -ForegroundColor Cyan
+Write-Host "  -> Identity API:     http://localhost:5001" -ForegroundColor Cyan
+Write-Host "  -> Ticket Core API:  http://localhost:5002" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Green
 Write-Host "Press Ctrl+C or close this window to terminate all services." -ForegroundColor Yellow
 
