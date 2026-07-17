@@ -30,7 +30,7 @@ export interface Ticket {
   providedIn: 'root'
 })
 export class TicketService {
-  private apiUrl = 'http://localhost:5000/api/tickets';
+  private apiUrl = 'http://localhost:5100/api/tickets';
 
   constructor(private http: HttpClient) {}
 

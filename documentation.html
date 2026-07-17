@@ -196,9 +196,9 @@
                     
                     <pre class="mermaid">
 graph TD
-    UI[Angular 17 Client<br>Port: 4200] -->|HTTP Calls| GW[YARP API Gateway<br>Port: 5000]
-    GW -->|Proxy /api/auth| ID[Identity Service<br>Port: 5001]
-    GW -->|Proxy /api/tickets| TC[Ticket Core Service<br>Port: 5002]
+    UI[Angular 17 Client<br>Port: 4300] -->|HTTP Calls| GW[YARP API Gateway<br>Port: 5100]
+    GW -->|Proxy /api/auth| ID[Identity Service<br>Port: 5101]
+    GW -->|Proxy /api/tickets| TC[Ticket Core Service<br>Port: 5103]
     
     ID -->|Saves users| IDDB[(SQLite: identity.db)]
     TC -->|Saves tickets| TCDB[(SQLite: tickets.db)]

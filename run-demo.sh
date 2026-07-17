@@ -21,9 +21,27 @@ cleanup() {
     echo "All services terminated successfully."
 }
 
+# Clear terminal screen
+clear
+
 echo "========================================================"
 echo "          ResolveDesk Local Demo Orchestrator           "
 echo "========================================================"
+
+# Kill any existing processes running on target ports (4300, 5100, 5101, 5103)
+echo "Cleaning up any processes running on target ports (4300, 5100, 5101, 5103)..."
+for port in 4300 5100 5101 5103; do
+    if command -v lsof >/dev/null 2>&1; then
+        pid=$(lsof -t -i:$port 2>/dev/null || true)
+        if [ ! -z "$pid" ]; then
+            echo "Killing process $pid on port $port..."
+            kill -9 $pid 2>/dev/null || true
+        fi
+    elif command -v fuser >/dev/null 2>&1; then
+        echo "Killing process on port $port..."
+        fuser -k $port/tcp 2>/dev/null || true
+    fi
+done
 
 # Configure portable local .NET SDK path
 export PATH="$PWD/dotnet-sdk:$PATH"
@@ -40,19 +58,19 @@ echo "Building backend .NET projects..."
 dotnet build ResolveDesk.sln
 
 # Start backend services
-echo "Starting Identity Service (SQLite: port 5001)..."
+echo "Starting Identity Service (SQLite: port 5101)..."
 cd src/ResolveDesk.Services.Identity
-dotnet run --urls "http://localhost:5001" &
+dotnet run --urls "http://localhost:5101" &
 cd ../..
 
-echo "Starting Ticket Core Service (SQLite & InMemory EventBus: port 5002)..."
+echo "Starting Ticket Core Service (SQLite & InMemory EventBus: port 5103)..."
 cd src/ResolveDesk.Services.TicketCore
-dotnet run --urls "http://localhost:5002" &
+dotnet run --urls "http://localhost:5103" &
 cd ../..
 
-echo "Starting API Gateway (YARP Reverse Proxy: port 5000)..."
+echo "Starting API Gateway (YARP Reverse Proxy: port 5100)..."
 cd src/ResolveDesk.Gateway
-dotnet run --urls "http://localhost:5000" &
+dotnet run --urls "http://localhost:5100" &
 cd ../..
 
 # Setup and Start Frontend
@@ -62,17 +80,17 @@ if [ ! -d "node_modules" ]; then
     echo "Installing UI dependencies (npm install)..."
     npm install
 fi
-# Run Angular CLI dev server on port 4200 (bound to 0.0.0.0 for accessibility)
-npm run start -- --port 4200 --host 0.0.0.0 &
+# Run Angular CLI dev server on port 4300 (bound to 0.0.0.0 for accessibility)
+npm run start -- --port 4300 --host 0.0.0.0 &
 cd ../..
 
 echo "========================================================"
 echo "ResolveDesk is starting up! Access the apps below:"
 echo "--------------------------------------------------------"
-echo "  ➜ Angular UI:       http://localhost:4200"
-echo "  ➜ Gateway API:      http://localhost:5000"
-echo "  ➜ Identity API:     http://localhost:5001"
-echo "  ➜ Ticket Core API:  http://localhost:5002"
+echo "  ➜ Angular UI:       http://localhost:4300"
+echo "  ➜ Gateway API:      http://localhost:5100"
+echo "  ➜ Identity API:     http://localhost:5101"
+echo "  ➜ Ticket Core API:  http://localhost:5103"
 echo "========================================================"
 echo "Press Ctrl+C to terminate all services."
 

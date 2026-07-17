@@ -1,4 +1,4 @@
-@ResolveDesk.Gateway_HostAddress = http://localhost:5219
+@ResolveDesk.Gateway_HostAddress = http://localhost:5100
 
 GET {{ResolveDesk.Gateway_HostAddress}}/weatherforecast/
 Accept: application/json

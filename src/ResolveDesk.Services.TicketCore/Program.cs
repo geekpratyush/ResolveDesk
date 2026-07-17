@@ -190,7 +190,7 @@ using (var scope = app.Services.CreateScope())
                             Id = Guid.NewGuid(),
                             ResponderId = adminId,
                             ResponderName = "System Admin",
-                            Message = "We updated the authorized redirect URIs in our Google cloud console to match the gateway proxy address http://localhost:5000/api/auth/oauth-login. Please test again.",
+                            Message = "We updated the authorized redirect URIs in our Google cloud console to match the gateway proxy address http://localhost:5100/api/auth/oauth-login. Please test again.",
                             CreatedAt = DateTime.UtcNow.AddDays(-4)
                         },
                         new ResolveDesk.Services.TicketCore.Models.TicketResponse

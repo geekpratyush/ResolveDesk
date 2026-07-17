@@ -10,9 +10,9 @@ ResolveDesk is structured as a monorepo comprising four isolated services:
 
 ```mermaid
 graph TD
-    UI[Angular 17 SPA UI] -->|Port 4200| GW[YARP API Gateway]
-    GW -->|Port 5000 /api/auth| ID[Identity & Auth Service]
-    GW -->|Port 5000 /api/tickets| TC[Ticket Core Service]
+    UI[Angular 17 SPA UI] -->|Port 4300| GW[YARP API Gateway]
+    GW -->|Port 5100 /api/auth| ID[Identity & Auth Service]
+    GW -->|Port 5100 /api/tickets| TC[Ticket Core Service]
     
     TC -->|Publish event| EB[InMemory Event Bus]
     EB -->|Deliver event| TC
@@ -26,25 +26,25 @@ graph TD
 ### 1. API Gateway (`ResolveDesk.Gateway`)
 * **Technology**: YARP (Yet Another Reverse Proxy)
 * **Responsibility**: Acts as the single entry point for all frontend requests, routing `/api/auth/*` traffic to the Identity Service and `/api/tickets/*` to the Ticket Core Service.
-* **Port**: Runs on `http://localhost:5000`
+* **Port**: Runs on `http://localhost:5100`
 
 ### 2. Identity & Authentication Service (`ResolveDesk.Services.Identity`)
 * **Technology**: ASP.NET Core Web API, ASP.NET Core Identity Core
 * **Responsibility**: Manages user registration, role allocation (`Admin`, `SupportStaff`, `Customer`), password hashing, and generates signed HS256 JWT security tokens.
 * **Database**: Runs on SQLite (`identity.db`) locally or SQL Server in production.
-* **Port**: Runs on `http://localhost:5001`
+* **Port**: Runs on `http://localhost:5101`
 
 ### 3. Ticket Core Service (`ResolveDesk.Services.TicketCore`)
 * **Technology**: ASP.NET Core Web API, Entity Framework Core, MassTransit
 * **Responsibility**: Core domain microservice that manages ticket creation, status changes, priorities, SLA tracking, and ticket replies. It runs event consumers (`TicketCreatedConsumer`, `TicketStatusChangedConsumer`) in-process.
 * **Event bus**: Publishes and processes integration events (`TicketCreated`, `TicketStatusChanged`) locally via MassTransit's InMemory provider.
 * **Database**: Runs on SQLite (`tickets.db`) locally or SQL Server in production.
-* **Port**: Runs on `http://localhost:5002`
+* **Port**: Runs on `http://localhost:5103`
 
 ### 4. Angular UI Frontend (`ResolveDesk.UI`)
 * **Technology**: Angular 17 (Standalone Components, Signals State Store, HttpClient, Tailwind CSS)
 * **Responsibility**: A modern support dashboard displaying ticket statistics, priority breakdowns, interactive SLAs, and message boards.
-* **Port**: Runs on `http://localhost:4200`
+* **Port**: Runs on `http://localhost:4300`
 
 ---
 
@@ -109,7 +109,7 @@ Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 ```
 
 ### Seeded Credentials
-When the dashboard loads on **`http://localhost:4200`**, use any of the seeded credentials to log in:
+When the dashboard loads on **`http://localhost:4300`**, use any of the seeded credentials to log in:
 * **Administrator**: `admin@resolvedesk.com` / `Admin@123`
 * **Support Agent**: `support@resolvedesk.com` / `Support@123`
 * **Customer**: `customer@resolvedesk.com` / `Customer@123`
