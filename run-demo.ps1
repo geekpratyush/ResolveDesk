@@ -4,7 +4,8 @@
 $processes = @()
 
 function CleanUp {
-    Write-Host "`n========================================================" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "========================================================" -ForegroundColor Yellow
     Write-Host "Stopping all services..." -ForegroundColor Yellow
     Write-Host "========================================================" -ForegroundColor Yellow
     
@@ -52,7 +53,7 @@ Write-Host "Starting Identity Service (SQLite: port 5001)..." -ForegroundColor G
 $pIdentity = Start-Process dotnet -ArgumentList "run --project src/ResolveDesk.Services.Identity --urls http://localhost:5001" -NoNewWindow -PassThru
 $processes += $pIdentity
 
-Write-Host "Starting Ticket Core Service (SQLite & InMemory EventBus: port 5002)..." -ForegroundColor Gray
+Write-Host "Starting Ticket Core Service (SQLite and InMemory EventBus: port 5002)..." -ForegroundColor Gray
 $pTicketCore = Start-Process dotnet -ArgumentList "run --project src/ResolveDesk.Services.TicketCore --urls http://localhost:5002" -NoNewWindow -PassThru
 $processes += $pTicketCore
 
@@ -87,7 +88,8 @@ try {
     while ($true) {
         # Check if processes have exited prematurely
         if ($pIdentity.HasExited -or $pTicketCore.HasExited -or $pGateway.HasExited) {
-            Write-Host "`nWarning: One of the backend services exited unexpectedly." -ForegroundColor Red
+            Write-Host ""
+            Write-Host "Warning: One of the backend services exited unexpectedly." -ForegroundColor Red
             CleanUp
         }
         Start-Sleep -Seconds 1
