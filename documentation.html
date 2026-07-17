@@ -203,8 +203,8 @@ graph TD
     ID -->|Saves users| IDDB[(SQLite: identity.db)]
     TC -->|Saves tickets| TCDB[(SQLite: tickets.db)]
     
-    TC -->|Publish event| EB[MassTransit Event Bus<br>InMemory / RabbitMQ]
-    EB -->|ITicketCreatedEvent| NS[Notification Service<br>Simulated Email Logger]
+    TC -->|Publish event| EB[MassTransit Event Bus<br>InMemory]
+    EB -->|ITicketCreatedEvent| TC
                     </pre>
                 </div>
             </div> 
@@ -319,16 +319,15 @@ sequenceDiagram
     participant GW as API Gateway
     participant TC as TicketCore Service
     participant DB as SQLite DB
-    participant EB as MassTransit Event Bus
-    participant NS as Notification Service
+    participant EB as MassTransit Event Bus (InMemory)
 
     Customer->>UI: Create Ticket
     UI->>GW: POST /api/tickets
     GW->>TC: Forward Request
     TC->>DB: Save new ticket
     TC->>EB: Publish ITicketCreatedEvent
-    EB-->>NS: Deliver Event to TicketCreatedConsumer
-    NS->>NS: Process & log simulated Email Notification
+    EB-->>TC: Deliver Event to TicketCreatedConsumer (In-Process)
+    TC->>TC: Process & log simulated Email Notification
     TC-->>GW: Return 201 Created (TicketDto)
     GW-->>UI: Return TicketDto
     UI->>UI: Refresh Signals & metrics
@@ -338,7 +337,7 @@ sequenceDiagram
                 <div class="p-6 bg-corp-bg border border-corp-border rounded">
                     <h3 class="font-bold text-corp-navy text-sm mb-1"><i class="fa-solid fa-sliders text-corp-blue mr-2"></i>Message Broker Transport Settings</h3>
                     <p class="text-slate-600 text-xs leading-relaxed">
-                        To simplify local execution, ResolveDesk features a MassTransit transport toggle. In local mode, it runs an **InMemory** loopback bus, executing consumers in-process. In production mode, it binds to **RabbitMQ** via AMQP protocols.
+                        To simplify local execution and eliminate external dependencies, ResolveDesk configures MassTransit with an **InMemory** loopback bus. This bus processes message consumers in-process instantly when tickets are created or changed.
                     </p>
                 </div>
             </div>

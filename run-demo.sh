@@ -50,9 +50,6 @@ cd src/ResolveDesk.Services.TicketCore
 dotnet run --urls "http://localhost:5002" &
 cd ../..
 
-# Note: Notification worker is bypassed in InMemory event bus mode,
-# because the Ticket Core Service hosts the consumers in-process!
-
 echo "Starting API Gateway (YARP Reverse Proxy: port 5000)..."
 cd src/ResolveDesk.Gateway
 dotnet run --urls "http://localhost:5000" &

@@ -6,7 +6,7 @@ ResolveDesk is a modern, high-fidelity customer support ticketing platform desig
 
 ## Architecture Overview
 
-ResolveDesk is structured as a monorepo comprising five isolated services:
+ResolveDesk is structured as a monorepo comprising four isolated services:
 
 ```mermaid
 graph TD
@@ -14,7 +14,8 @@ graph TD
     GW -->|Port 5000 /api/auth| ID[Identity & Auth Service]
     GW -->|Port 5000 /api/tickets| TC[Ticket Core Service]
     
-    TC <-->|InMemory / RabbitMQ Event Bus| NS[Notification Service]
+    TC -->|Publish event| EB[InMemory Event Bus]
+    EB -->|Deliver event| TC
     
     subgraph Databases
         ID -.-> ID_DB[(SQLite / SQL Server)]
@@ -35,17 +36,12 @@ graph TD
 
 ### 3. Ticket Core Service (`ResolveDesk.Services.TicketCore`)
 * **Technology**: ASP.NET Core Web API, Entity Framework Core, MassTransit
-* **Responsibility**: Core domain microservice that manages ticket creation, status changes, priorities, SLA tracking, and ticket replies.
-* **Event bus**: Publishes integration events (`TicketCreated`, `TicketStatusChanged`) via MassTransit.
+* **Responsibility**: Core domain microservice that manages ticket creation, status changes, priorities, SLA tracking, and ticket replies. It runs event consumers (`TicketCreatedConsumer`, `TicketStatusChangedConsumer`) in-process.
+* **Event bus**: Publishes and processes integration events (`TicketCreated`, `TicketStatusChanged`) locally via MassTransit's InMemory provider.
 * **Database**: Runs on SQLite (`tickets.db`) locally or SQL Server in production.
 * **Port**: Runs on `http://localhost:5002`
 
-### 4. Notification Service (`ResolveDesk.Services.Notification`)
-* **Technology**: Worker Service / Console API
-* **Responsibility**: Listens for integration events asynchronously and simulates email alerts or SMS notifications to support staff.
-* **Port**: Runs as a background worker.
-
-### 5. Angular UI Frontend (`ResolveDesk.UI`)
+### 4. Angular UI Frontend (`ResolveDesk.UI`)
 * **Technology**: Angular 17 (Standalone Components, Signals State Store, HttpClient, Tailwind CSS)
 * **Responsibility**: A modern support dashboard displaying ticket statistics, priority breakdowns, interactive SLAs, and message boards.
 * **Port**: Runs on `http://localhost:4200`
@@ -81,8 +77,8 @@ To achieve a "plug-and-play" demo setup, the services use `context.Database.Ensu
 * If the database does not exist, it automatically compiles the database structure and writes all required tables immediately.
 * It checks if the data tables are empty, and if so, seeds high-fidelity test records (roles, users, and tickets with reply threads) for the presentation dashboard.
 
-### Decoupled Event-Driven Bus (InMemory / RabbitMQ)
-MassTransit reads the event bus provider from configurations. In production container settings, it connects to RabbitMQ. For local demonstration environments, it initiates an **InMemory Loopback** bus that runs consumers in-process, removing any external broker dependencies.
+### Decoupled Event-Driven Bus (InMemory)
+To simplify local execution and eliminate external message broker dependencies, ResolveDesk initiates an **InMemory Loopback** event bus using MassTransit. This loopback executes consumer workflows in-process when tickets are created or modified, simulating real-time asynchronous notifications instantly.
 
 ### Angular 17 State Store with Signals
 State management in the frontend avoids heavy third-party libraries like NgRx in favor of fine-grained **Angular Signals**:

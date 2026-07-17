@@ -45,31 +45,16 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Configure MassTransit with RabbitMQ or InMemory Transport
+// Configure MassTransit with InMemory Transport
 builder.Services.AddMassTransit(x =>
 {
-    var eventBusProvider = builder.Configuration["EventBus:Provider"] ?? "RabbitMq";
-    if (eventBusProvider.Equals("InMemory", StringComparison.OrdinalIgnoreCase))
-    {
-        x.AddConsumer<ResolveDesk.Services.TicketCore.Consumers.TicketCreatedConsumer>();
-        x.AddConsumer<ResolveDesk.Services.TicketCore.Consumers.TicketStatusChangedConsumer>();
+    x.AddConsumer<ResolveDesk.Services.TicketCore.Consumers.TicketCreatedConsumer>();
+    x.AddConsumer<ResolveDesk.Services.TicketCore.Consumers.TicketStatusChangedConsumer>();
 
-        x.UsingInMemory((context, cfg) =>
-        {
-            cfg.ConfigureEndpoints(context);
-        });
-    }
-    else
+    x.UsingInMemory((context, cfg) =>
     {
-        x.UsingRabbitMq((context, cfg) =>
-        {
-            cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "rabbitmq", "/", h =>
-            {
-                h.Username(builder.Configuration["RabbitMq:Username"] ?? "guest");
-                h.Password(builder.Configuration["RabbitMq:Password"] ?? "guest");
-            });
-        });
-    }
+        cfg.ConfigureEndpoints(context);
+    });
 });
 
 // Configure CORS

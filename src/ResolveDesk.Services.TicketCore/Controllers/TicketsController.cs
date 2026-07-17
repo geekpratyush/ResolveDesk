@@ -119,7 +119,7 @@ namespace ResolveDesk.Services.TicketCore.Controllers
 
             _logger.LogInformation($"Created ticket {ticket.Id}. Publishing TicketCreatedEvent...");
 
-            // Publish event asynchronously via MassTransit to RabbitMQ
+            // Publish event asynchronously via MassTransit
             await _publishEndpoint.Publish<ITicketCreatedEvent>(new
             {
                 TicketId = ticket.Id,
