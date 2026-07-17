@@ -1,0 +1,53 @@
+<div class="register-wrapper animate-fade-in">
+  <div class="register-card">
+    <div class="logo-area">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="logo-svg">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <path d="M9 15l2 2 4-4"></path>
+      </svg>
+      <span class="brand-name">ResolveDesk</span>
+    </div>
+    
+    <p class="subtitle">Create an Enterprise Account</p>
+
+    <div *ngIf="errorMessage" class="error-banner">
+      {{ errorMessage }}
+    </div>
+
+    <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
+      <div class="form-group">
+        <label class="form-label" for="fullName">Full Name</label>
+        <input class="form-input" type="text" id="fullName" name="fullName" [(ngModel)]="fullName" placeholder="e.g. John Doe" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input class="form-input" type="email" id="email" name="email" [(ngModel)]="email" placeholder="e.g. user@resolvedesk.com" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-input" type="password" id="password" name="password" [(ngModel)]="password" placeholder="••••••••" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="role">Assign Role</label>
+        <select class="form-select" id="role" name="role" [(ngModel)]="role" required>
+          <option value="Customer">Customer</option>
+          <option value="SupportStaff">Support Staff</option>
+          <option value="Admin">Administrator</option>
+        </select>
+      </div>
+
+      <button class="btn btn-primary w-full" type="submit" [disabled]="isLoading">
+        <span *ngIf="!isLoading">Register</span>
+        <span *ngIf="isLoading" class="spinner"></span>
+      </button>
+    </form>
+
+    <div class="footer-text">
+      Already have an account? <a routerLink="/login">Sign In here</a>
+    </div>
+  </div>
+</div>

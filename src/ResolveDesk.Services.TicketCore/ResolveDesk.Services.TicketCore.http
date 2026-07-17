@@ -1,0 +1,6 @@
+@ResolveDesk.Services.TicketCore_HostAddress = http://localhost:5135
+
+GET {{ResolveDesk.Services.TicketCore_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

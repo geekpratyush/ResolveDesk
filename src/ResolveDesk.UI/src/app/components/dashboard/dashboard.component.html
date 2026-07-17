@@ -1,0 +1,367 @@
+<div class="dashboard-wrapper animate-fade-in">
+  <!-- Top Navigation Header: Corporate Deep Indigo/Blue Bar -->
+  <header class="top-nav">
+    <div class="brand-container">
+      <i class="fa-solid fa-shield-halved brand-icon"></i>
+      <span class="brand-name">ResolveDesk <span class="brand-sub">SLA Control</span></span>
+    </div>
+
+    <div class="user-profile-section">
+      <div class="user-meta">
+        <span class="user-name">{{ currentUser?.fullName }}</span>
+        <span class="user-role-badge" [ngClass]="currentUser?.role?.toLowerCase()">{{ currentUser?.role }}</span>
+      </div>
+      <button class="btn btn-danger btn-sm logout-btn" (click)="onLogout()">
+        <i class="fa-solid fa-right-from-bracket icon-left"></i>
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Body Content -->
+  <div class="main-content">
+    
+    <!-- Left Column: Ticket List -->
+    <aside class="ticket-list-panel">
+      <div class="panel-header">
+        <div class="panel-title-row">
+          <h2>Tickets Log</h2>
+          <!-- Create Ticket button only for Customer role -->
+          <button *ngIf="!isAdminOrSupport()" class="btn btn-primary btn-sm" (click)="showCreateModal = true">
+            <i class="fa-solid fa-plus icon-left"></i>
+            Create Ticket
+          </button>
+        </div>
+        
+        <!-- Search and Filter Panel -->
+        <div class="search-filter-bar">
+          <div class="search-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" class="form-input search-input" placeholder="Search Title or Email..." [(ngModel)]="searchTerm" (input)="applyFilter()">
+          </div>
+          
+          <div class="filter-row">
+            <select class="form-select filter-select" [(ngModel)]="statusFilter" (change)="applyFilter()">
+              <option value="ALL">All Statuses</option>
+              <option value="OPEN">Open</option>
+              <option value="INPROGRESS">In Progress</option>
+              <option value="CLOSED">Closed</option>
+            </select>
+            
+            <select class="form-select filter-select" [(ngModel)]="categoryFilter" (change)="applyFilter()">
+              <option value="ALL">All Categories</option>
+              <option value="Software">Software</option>
+              <option value="Hardware">Hardware</option>
+              <option value="Network">Network</option>
+              <option value="Database">Database</option>
+              <option value="Security">Security</option>
+              <option value="Billing">Billing</option>
+            </select>
+          </div>
+
+          <select class="form-select filter-select" [(ngModel)]="priorityFilter" (change)="applyFilter()">
+            <option value="ALL">All Priorities</option>
+            <option value="Critical">Critical Priority</option>
+            <option value="High">High Priority</option>
+            <option value="Medium">Medium Priority</option>
+            <option value="Low">Low Priority</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tickets Scroll Container -->
+      <div class="tickets-container">
+        <!-- Clear selection card if showing dashboard -->
+        <div class="clear-selection-btn-container" *ngIf="selectedTicket">
+          <button class="btn btn-secondary btn-sm w-full text-center" (click)="selectedTicket = null">
+            <i class="fa-solid fa-chart-column icon-left"></i> Back to SLA Dashboard
+          </button>
+        </div>
+
+        <div *ngIf="filteredTickets.length === 0" class="empty-list-state">
+          <p>No tickets match filters.</p>
+        </div>
+
+        <div *ngFor="let ticket of filteredTickets" class="ticket-card" [class.active]="selectedTicket?.id === ticket.id" (click)="selectTicket(ticket)">
+          <div class="ticket-card-header">
+            <span class="ticket-title">{{ ticket.title }}</span>
+          </div>
+          <div class="ticket-badge-row">
+            <span class="status-badge" [ngClass]="ticket.status.toLowerCase()">{{ ticket.status }}</span>
+            <span class="priority-badge" [ngClass]="ticket.priority.toLowerCase()">{{ ticket.priority }}</span>
+          </div>
+          <p class="ticket-desc-preview">{{ ticket.description }}</p>
+          <div class="ticket-card-footer">
+            <span class="ticket-category-tag">
+              <i class="fa-solid fa-folder icon-left-sm"></i>{{ ticket.category }}
+            </span>
+            <span class="ticket-date">{{ ticket.createdAt | date:'MMM d, h:mm a' }}</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Column: Ticket Conversation Detail OR Live Analytics Dashboard -->
+    <main class="conversation-detail-panel">
+      
+      <!-- Live SLA Analytics Dashboard (Shown when selectedTicket is NULL) -->
+      <div *ngIf="!selectedTicket" class="dashboard-analytics-view animate-fade-in">
+        
+        <!-- Dashboard Header -->
+        <div class="analytics-header">
+          <div>
+            <span class="analytics-subtitle">IBM Carbon Service Standard</span>
+            <h2>Operational Performance Control Room</h2>
+          </div>
+          <div class="last-sync-badge">
+            <span class="pulse-indicator"></span> Active Monitoring
+          </div>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card purple">
+            <div class="kpi-icon"><i class="fa-solid fa-list-check"></i></div>
+            <div class="kpi-meta">
+              <span class="kpi-title">Total Tickets</span>
+              <span class="kpi-value">{{ totalTicketsCount }}</span>
+            </div>
+          </div>
+          <div class="kpi-card yellow">
+            <div class="kpi-icon"><i class="fa-regular fa-clock"></i></div>
+            <div class="kpi-meta">
+              <span class="kpi-title">Active Issues</span>
+              <span class="kpi-value">{{ openTicketsCount + inProgressTicketsCount }}</span>
+            </div>
+          </div>
+          <div class="kpi-card green">
+            <div class="kpi-icon"><i class="fa-regular fa-circle-check"></i></div>
+            <div class="kpi-meta">
+              <span class="kpi-title">Resolved SLA</span>
+              <span class="kpi-value">{{ closedTicketsCount }}</span>
+            </div>
+          </div>
+          <div class="kpi-card blue">
+            <div class="kpi-icon"><i class="fa-solid fa-gauge-high"></i></div>
+            <div class="kpi-meta">
+              <span class="kpi-title">Avg SLA Resolution</span>
+              <span class="kpi-value">{{ averageResolutionHours }} hrs</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Workspace -->
+        <div class="charts-container-row">
+          
+          <!-- Category Volume Bar Graph -->
+          <div class="chart-box category-chart">
+            <h3>Ticket Volume by Category</h3>
+            <div class="bar-chart-list">
+              <div *ngFor="let item of categoryDistribution" class="bar-chart-row">
+                <div class="bar-label-row">
+                  <span class="bar-name"><i class="fa-solid fa-folder icon-left-sm text-slate-400"></i> {{ item.category }}</span>
+                  <span class="bar-count">{{ item.count }} ({{ item.percentage }}%)</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" [style.width.%]="item.percentage"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Priority SLA Distribution -->
+          <div class="chart-box priority-chart">
+            <h3>SLA Priority Distribution</h3>
+            <div class="priority-pills-list">
+              <div *ngFor="let item of priorityDistribution" class="priority-pill-row">
+                <span class="pri-badge-indicator" [ngClass]="item.priority.toLowerCase()"></span>
+                <span class="pri-name">{{ item.priority }}</span>
+                <div class="pri-percentage-bar">
+                  <div class="pri-fill" [ngClass]="item.priority.toLowerCase()" [style.width.%]="item.percentage"></div>
+                </div>
+                <span class="pri-count">{{ item.count }} tickets</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SLA Reports Quick Preview Table -->
+        <div class="reports-table-box">
+          <div class="table-header-row">
+            <h3>All Tickets Log Report</h3>
+            <span class="table-subtitle">Showing {{ filteredTickets.length }} matching logs</span>
+          </div>
+          
+          <div class="table-wrapper">
+            <table class="reports-table">
+              <thead>
+                <tr>
+                  <th>Ticket ID</th>
+                  <th>Title</th>
+                  <th>Customer Email</th>
+                  <th>Category</th>
+                  <th>Priority</th>
+                  <th>Created At</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let ticket of filteredTickets.slice(0, 5)" (click)="selectTicket(ticket)" class="table-click-row">
+                  <td class="font-mono text-indigo-600">#{{ ticket.id.substring(0, 6) }}</td>
+                  <td class="font-semibold text-slate-900">{{ ticket.title }}</td>
+                  <td class="text-slate-600">{{ ticket.customerEmail }}</td>
+                  <td><span class="table-badge cat">{{ ticket.category }}</span></td>
+                  <td><span class="table-badge pri" [ngClass]="ticket.priority.toLowerCase()">{{ ticket.priority }}</span></td>
+                  <td class="text-xs text-slate-500">{{ ticket.createdAt | date:'MMM d, yyyy' }}</td>
+                  <td><span class="table-badge status" [ngClass]="ticket.status.toLowerCase()">{{ ticket.status }}</span></td>
+                </tr>
+                <tr *ngIf="filteredTickets.length === 0">
+                  <td colspan="7" class="text-center py-4 text-slate-400">No logs matching active filters.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Conversations/Ticket details panel -->
+      <div *ngIf="selectedTicket" class="conversation-container animate-fade-in">
+        <!-- Ticket Header Area -->
+        <div class="conversation-header">
+          <div class="ticket-meta-info">
+            <div class="detail-badge-row">
+              <span class="ticket-id">#{{ selectedTicket.id.substring(0, 8) }}</span>
+              <span class="detail-cat-badge">
+                <i class="fa-solid fa-folder icon-left-sm"></i>Category: {{ selectedTicket.category }}
+              </span>
+              <span class="detail-pri-badge" [ngClass]="selectedTicket.priority.toLowerCase()">
+                <i class="fa-solid fa-bolt icon-left-sm"></i>SLA: {{ selectedTicket.priority }}
+              </span>
+            </div>
+            <h1>{{ selectedTicket.title }}</h1>
+            <p class="customer-info">Opened by: <strong>{{ selectedTicket.customerEmail }}</strong> on {{ selectedTicket.createdAt | date:'MMMM d, yyyy - h:mm a' }}</p>
+          </div>
+
+          <div class="status-control-box">
+            <label class="form-label" style="margin-bottom: 0.25rem;">Status</label>
+            <!-- Dropdown for Support/Admin to modify status -->
+            <select *ngIf="isAdminOrSupport(); else customerStatusView" class="form-select status-update-select" [value]="selectedTicket.status" (change)="onStatusChange($event)">
+              <option value="Open">Open</option>
+              <option value="InProgress">In Progress</option>
+              <option value="Closed">Closed</option>
+            </select>
+            <!-- Standard text display for Customers -->
+            <ng-template #customerStatusView>
+              <div class="status-badge-lg" [ngClass]="selectedTicket.status.toLowerCase()">{{ selectedTicket.status }}</div>
+            </ng-template>
+          </div>
+        </div>
+
+        <!-- Scrollable Chat Log -->
+        <div class="chat-timeline">
+          <!-- Customer Original Issue Message -->
+          <div class="chat-message customer-issue">
+            <div class="message-header">
+              <span class="sender-name"><i class="fa-solid fa-user icon-left-sm"></i> Customer Description</span>
+              <span class="message-time">{{ selectedTicket.createdAt | date:'MMM d, h:mm a' }}</span>
+            </div>
+            <div class="message-body">
+              {{ selectedTicket.description }}
+            </div>
+          </div>
+
+          <!-- Responses List -->
+          <div *ngFor="let response of selectedTicket.responses" class="chat-message" [class.agent-reply]="response.responderId !== selectedTicket.customerId">
+            <div class="message-header">
+              <span class="sender-name">
+                <i class="fa-solid icon-left-sm" [class.fa-user-tie]="response.responderId !== selectedTicket.customerId" [class.fa-user]="response.responderId === selectedTicket.customerId"></i>
+                {{ response.responderName }}
+              </span>
+              <span class="message-time">{{ response.createdAt | date:'MMM d, h:mm a' }}</span>
+            </div>
+            <div class="message-body">
+              {{ response.message }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Response Input Box -->
+        <div class="reply-compose-box">
+          <form (ngSubmit)="onSendReply()">
+            <div class="form-group" style="margin-bottom: 0.75rem;">
+              <textarea class="form-input form-textarea" placeholder="Type your response..." [(ngModel)]="replyMessage" name="replyMessage" required [disabled]="selectedTicket.status === 'Closed'"></textarea>
+            </div>
+            <div class="reply-actions">
+              <span *ngIf="selectedTicket.status === 'Closed'" class="closed-warning">
+                <i class="fa-solid fa-circle-exclamation icon-left"></i> This ticket is Closed. Reopen to send replies.
+              </span>
+              <button class="btn btn-primary" type="submit" [disabled]="isSendingReply || !replyMessage || selectedTicket.status === 'Closed'">
+                <span *ngIf="!isSendingReply"><i class="fa-solid fa-paper-plane icon-left"></i>Send Response</span>
+                <span *ngIf="isSendingReply" class="spinner"></span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Create Ticket Modal Form Overlay -->
+  <div *ngIf="showCreateModal" class="modal-overlay">
+    <div class="modal-card animate-fade-in">
+      <div class="modal-header">
+        <h3>Submit Support Request</h3>
+        <button class="close-btn" (click)="showCreateModal = false">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form (ngSubmit)="onCreateTicket()">
+        <div class="form-group">
+          <label class="form-label" for="ticketTitle">Subject / Title</label>
+          <input class="form-input" type="text" id="ticketTitle" name="ticketTitle" [(ngModel)]="newTicketTitle" placeholder="e.g. Cannot log in to payment portal" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="ticketCategory">Category</label>
+            <select class="form-select" id="ticketCategory" name="ticketCategory" [(ngModel)]="newTicketCategory">
+              <option value="Software">Software</option>
+              <option value="Hardware">Hardware</option>
+              <option value="Network">Network</option>
+              <option value="Database">Database</option>
+              <option value="Security">Security</option>
+              <option value="Billing">Billing</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ticketPriority">Priority (SLA)</label>
+            <select class="form-select" id="ticketPriority" name="ticketPriority" [(ngModel)]="newTicketPriority">
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="ticketDescription">Description of Problem</label>
+          <textarea class="form-input form-textarea" id="ticketDescription" name="ticketDescription" [(ngModel)]="newTicketDescription" placeholder="Please provide specific steps to reproduce the issue..." required></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" (click)="showCreateModal = false">Cancel</button>
+          <button class="btn btn-primary" type="submit" [disabled]="isCreatingTicket || !newTicketTitle || !newTicketDescription">
+            <span *ngIf="!isCreatingTicket"><i class="fa-solid fa-circle-check icon-left"></i>Submit Ticket</span>
+            <span *ngIf="isCreatingTicket" class="spinner"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

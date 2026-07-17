@@ -1,0 +1,98 @@
+# ResolveDesk Local Demo Runner for Windows
+# This script runs the entire microservices suite on Windows using SQLite and an InMemory event bus.
+
+$processes = @()
+
+function CleanUp {
+    Write-Host "`n========================================================" -ForegroundColor Yellow
+    Write-Host "Stopping all services..." -ForegroundColor Yellow
+    Write-Host "========================================================" -ForegroundColor Yellow
+    
+    foreach ($p in $processes) {
+        if ($p -and -not $p.HasExited) {
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+        }
+    }
+    
+    Write-Host "All services stopped successfully." -ForegroundColor Green
+    Exit
+}
+
+# Register clean-up handler for normal terminal exits
+$currentAction = $MyInvocation.MyCommand.Name
+Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action { CleanUp } | Out-Null
+
+Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host "          ResolveDesk Windows Demo Orchestrator          " -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+
+# Check requirements
+Write-Host "Checking system requirements..." -ForegroundColor Gray
+if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+    Write-Error "dotnet CLI (SDK 8.0) is required but not installed."
+    Exit 1
+}
+if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+    Write-Error "npm is required but not installed."
+    Exit 1
+}
+Write-Host "✓ dotnet and npm verified." -ForegroundColor Green
+
+# Build Backend Solution
+Write-Host "Building backend .NET projects..." -ForegroundColor Gray
+dotnet build ResolveDesk.sln
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Build failed."
+    Exit 1
+}
+
+# Start backend services
+Write-Host "Starting Identity Service (SQLite: port 5001)..." -ForegroundColor Gray
+$pIdentity = Start-Process dotnet -ArgumentList "run --project src/ResolveDesk.Services.Identity --urls http://localhost:5001" -NoNewWindow -PassThru
+$processes += $pIdentity
+
+Write-Host "Starting Ticket Core Service (SQLite & InMemory EventBus: port 5002)..." -ForegroundColor Gray
+$pTicketCore = Start-Process dotnet -ArgumentList "run --project src/ResolveDesk.Services.TicketCore --urls http://localhost:5002" -NoNewWindow -PassThru
+$processes += $pTicketCore
+
+Write-Host "Starting API Gateway (YARP Reverse Proxy: port 5000)..." -ForegroundColor Gray
+$pGateway = Start-Process dotnet -ArgumentList "run --project src/ResolveDesk.Gateway --urls http://localhost:5000" -NoNewWindow -PassThru
+$processes += $pGateway
+
+# Setup and Start Frontend
+Write-Host "Starting Angular UI frontend..." -ForegroundColor Gray
+Push-Location src/ResolveDesk.UI
+if (-not (Test-Path node_modules)) {
+    Write-Host "Installing UI dependencies (npm install)..." -ForegroundColor Gray
+    npm install
+}
+# Start angular server
+$pUI = Start-Process npm -ArgumentList "run start -- --port 4200 --host 0.0.0.0" -NoNewWindow -PassThru
+$processes += $pUI
+Pop-Location
+
+Write-Host "========================================================" -ForegroundColor Green
+Write-Host "ResolveDesk is starting up! Access the apps below:" -ForegroundColor Green
+Write-Host "--------------------------------------------------------" -ForegroundColor Green
+Write-Host "  ➜ Angular UI:       http://localhost:4200" -ForegroundColor Cyan
+Write-Host "  ➜ Gateway API:      http://localhost:5000" -ForegroundColor Cyan
+Write-Host "  ➜ Identity API:     http://localhost:5001" -ForegroundColor Cyan
+Write-Host "  ➜ Ticket Core API:  http://localhost:5002" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Green
+Write-Host "Press Ctrl+C or close this window to terminate all services." -ForegroundColor Yellow
+
+# Watch loop for termination
+try {
+    while ($true) {
+        # Check if processes have exited prematurely
+        if ($pIdentity.HasExited -or $pTicketCore.HasExited -or $pGateway.HasExited) {
+            Write-Host "`nWarning: One of the backend services exited unexpectedly." -ForegroundColor Red
+            CleanUp
+        }
+        Start-Sleep -Seconds 1
+    }
+}
+finally {
+    CleanUp
+}

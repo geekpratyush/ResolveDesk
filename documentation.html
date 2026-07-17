@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResolveDesk — System Architecture & Presentation Guide</title>
+    <!-- Google Fonts (IBM Plex Sans for clean corporate styling) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Mermaid.js for architecture diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['IBM Plex Sans', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        corp: {
+                            navy: '#002d62',     /* Citibank Navy */
+                            blue: '#0f62fe',     /* IBM Blue */
+                            darkBlue: '#0043ce', /* Hover Blue */
+                            lightBlue: '#edf5ff',/* Light Blue Tint */
+                            bg: '#f4f7fa',       /* Clean Background */
+                            border: '#dde1e6',   /* IBM Border */
+                            text: '#161616',     /* IBM Carbon Text */
+                        }
+                    }
+                }
+            }
+        };
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'neutral',
+            securityLevel: 'loose'
+        });
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f4f7fa;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #dde1e6;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8d8d8d;
+        }
+        .mermaid {
+            background: #ffffff;
+            border: 1px solid #dde1e6;
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="bg-corp-bg text-corp-text font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- Header Section: Citibank Navy Bar -->
+    <header class="bg-corp-navy text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="h-10 w-10 rounded bg-[#00a4e4] flex items-center justify-center shadow-md">
+                    <i class="fa-solid fa-shield-halved text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center">
+                        ResolveDesk <span class="ml-2 text-xs font-semibold px-2 py-0.5 rounded bg-white/10 text-blue-200 border border-white/20">System Documentation</span>
+                    </h1>
+                    <p class="text-xs text-blue-100/70">Enterprise Microservices Architecture & Presentation Resource Portal</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="#setup" class="text-xs font-semibold px-4 py-2 rounded border border-white/20 bg-white/5 hover:bg-white/10 transition duration-150">Quick Run Guide</a>
+                <span class="h-5 w-px bg-white/20"></span>
+                <span class="text-xs text-blue-200 flex items-center font-semibold">
+                    <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
+                    SQLite Active Seeding Enabled
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-6 py-8 flex flex-col md:flex-row gap-8">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="md:w-64 flex-shrink-0">
+            <div class="sticky top-24 space-y-6">
+                <div>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 px-3">Presentation Slides</h2>
+                    <nav class="space-y-1">
+                        <button onclick="switchTab('overview')" id="btn-overview" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded text-sm font-semibold transition duration-150 bg-corp-blue text-white shadow">
+                            <i class="fa-solid fa-network-wired w-5"></i>
+                            <span>System Overview</span>
+                        </button>
+                        <button onclick="switchTab('architecture')" id="btn-architecture" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded text-sm font-semibold transition duration-150 text-slate-600 hover:text-corp-blue hover:bg-white border border-transparent hover:border-corp-border">
+                            <i class="fa-solid fa-folder-tree w-5"></i>
+                            <span>Clean Architecture</span>
+                        </button>
+                        <button onclick="switchTab('dbprovider')" id="btn-dbprovider" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded text-sm font-semibold transition duration-150 text-slate-600 hover:text-corp-blue hover:bg-white border border-transparent hover:border-corp-border">
+                            <i class="fa-solid fa-database w-5"></i>
+                            <span>Database & Seeding</span>
+                        </button>
+                        <button onclick="switchTab('eventbus')" id="btn-eventbus" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded text-sm font-semibold transition duration-150 text-slate-600 hover:text-corp-blue hover:bg-white border border-transparent hover:border-corp-border">
+                            <i class="fa-solid fa-circle-nodes w-5"></i>
+                            <span>Asynchronous Event Bus</span>
+                        </button>
+                        <button onclick="switchTab('angular')" id="btn-angular" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded text-sm font-semibold transition duration-150 text-slate-600 hover:text-corp-blue hover:bg-white border border-transparent hover:border-corp-border">
+                            <i class="fa-solid fa-code w-5"></i>
+                            <span>Angular 17 & SLA Stats</span>
+                        </button>
+                    </nav>
+                </div>
+
+                <div class="pt-4 border-t border-corp-border">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 px-3">Local Sandbox Files</h2>
+                    <div class="space-y-1 px-3 text-xs text-slate-600 font-mono">
+                        <div class="flex items-center py-1">
+                            <i class="fa-regular fa-folder text-blue-500 mr-2"></i> src/
+                        </div>
+                        <div class="flex items-center py-1 pl-4">
+                            <i class="fa-regular fa-file-code text-slate-500 mr-2"></i> run-demo.sh
+                        </div>
+                        <div class="flex items-center py-1 pl-4">
+                            <i class="fa-regular fa-file-code text-slate-500 mr-2"></i> run-demo.ps1
+                        </div>
+                        <div class="flex items-center py-1 pl-4">
+                            <i class="fa-solid fa-database text-amber-600 mr-2"></i> identity.db
+                        </div>
+                        <div class="flex items-center py-1 pl-4">
+                            <i class="fa-solid fa-database text-amber-600 mr-2"></i> tickets.db
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Document Content Area -->
+        <article class="flex-grow bg-white border border-corp-border rounded shadow-sm p-8 min-h-[600px]">
+            
+            <!-- SECTION: OVERVIEW -->
+            <div id="tab-overview" class="tab-content space-y-8">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-corp-navy mb-2">Enterprise Support Architecture</h2>
+                    <p class="text-slate-600 text-base leading-relaxed">
+                        ResolveDesk is a professional, high-fidelity customer support ticketing application developed with a decoupled microservice backend in **.NET 8** and a reactive, signal-based dashboard frontend in **Angular 17**. 
+                    </p>
+                </div>
+
+                <!-- 3-Column Highlights -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-5 rounded border border-corp-border bg-corp-bg hover:shadow-md transition duration-200">
+                        <div class="h-10 w-10 rounded bg-corp-lightBlue flex items-center justify-center text-corp-blue mb-4">
+                            <i class="fa-solid fa-cubes text-lg"></i>
+                        </div>
+                        <h3 class="font-bold text-corp-navy text-sm mb-1">Bounded Microservices</h3>
+                        <p class="text-slate-600 text-xs leading-relaxed">Identity and TicketCore feature completely decoupled SQLite schemas, communicating asynchronously over event notifications.</p>
+                    </div>
+
+                    <div class="p-5 rounded border border-corp-border bg-corp-bg hover:shadow-md transition duration-200">
+                        <div class="h-10 w-10 rounded bg-emerald-50 flex items-center justify-center text-emerald-600 mb-4">
+                            <i class="fa-solid fa-database text-lg"></i>
+                        </div>
+                        <h3 class="font-bold text-corp-navy text-sm mb-1">Dual EF Core Providers</h3>
+                        <p class="text-slate-600 text-xs leading-relaxed">Runs either SQL Server in staging/prod or zero-install SQLite locally using automated connection string schema mapping.</p>
+                    </div>
+
+                    <div class="p-5 rounded border border-corp-border bg-corp-bg hover:shadow-md transition duration-200">
+                        <div class="h-10 w-10 rounded bg-amber-50 flex items-center justify-center text-amber-600 mb-4">
+                            <i class="fa-solid fa-bolt-lightning text-lg"></i>
+                        </div>
+                        <h3 class="font-bold text-corp-navy text-sm mb-1">Angular Signals State</h3>
+                        <p class="text-slate-600 text-xs leading-relaxed">Uses state signals for light UI refresh cycles. Dynamic SLA indicators recalculate instantly based on selected categories.</p>
+                    </div>
+                </div>
+
+                <!-- System Topology Diagram (Mermaid) -->
+                <div class="pt-4">
+                    <h3 class="text-base font-bold text-corp-navy mb-2"><i class="fa-solid fa-diagram-project mr-2"></i>System Architecture Topology</h3>
+                    <p class="text-xs text-slate-500 mb-4">The following diagram illustrates how the frontend talks to the microservices gateway and how the event loopback synchronizes tasks:</p>
+                    
+                    <pre class="mermaid">
+graph TD
+    UI[Angular 17 Client<br>Port: 4200] -->|HTTP Calls| GW[YARP API Gateway<br>Port: 5000]
+    GW -->|Proxy /api/auth| ID[Identity Service<br>Port: 5001]
+    GW -->|Proxy /api/tickets| TC[Ticket Core Service<br>Port: 5002]
+    
+    ID -->|Saves users| IDDB[(SQLite: identity.db)]
+    TC -->|Saves tickets| TCDB[(SQLite: tickets.db)]
+    
+    TC -->|Publish event| EB[MassTransit Event Bus<br>InMemory / RabbitMQ]
+    EB -->|ITicketCreatedEvent| NS[Notification Service<br>Simulated Email Logger]
+                    </pre>
+                </div>
+            </div> 
+
+            <!-- SECTION: CLEAN ARCHITECTURE -->
+            <div id="tab-architecture" class="tab-content hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-corp-navy mb-2">Clean Architecture Implementation</h2>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        To maintain high cohesion and prevent cross-cutting infrastructure concerns from bleeding into the core customer workflows, each .NET microservice maintains clear decoupling layers:
+                    </p>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="p-6 bg-corp-bg border border-corp-border rounded">
+                        <h3 class="font-bold text-corp-navy text-sm mb-1"><i class="fa-solid fa-cube text-corp-blue mr-2"></i>1. Core Domain Layer</h3>
+                        <p class="text-slate-600 text-xs leading-relaxed mb-2">
+                            Holds model entities, business aggregate structures, and repository contracts. The core layer is completely isolated from framework dependencies (no EF Core namespaces or controller contexts).
+                        </p>
+                        <ul class="text-xs font-mono text-corp-blue space-y-1">
+                            <li>• Ticket.cs: Holds properties (Title, Description, Category, Priority, Status, CreatedAt, ResolvedAt) and TicketResponse child relations.</li>
+                            <li>• ITicketRepository.cs: Defines data operations (AddAsync, UpdateAsync, GetByIdAsync).</li>
+                        </ul>
+                    </div>
+
+                    <div class="p-6 bg-corp-bg border border-corp-border rounded">
+                        <h3 class="font-bold text-corp-navy text-sm mb-1"><i class="fa-solid fa-gears text-corp-blue mr-2"></i>2. Infrastructure Layer</h3>
+                        <p class="text-slate-600 text-xs leading-relaxed mb-2">
+                            Implements data persistence, maps SQL schema tables, and configures outgoing networks.
+                        </p>
+                        <ul class="text-xs font-mono text-corp-blue space-y-1">
+                            <li>• TicketDbContext.cs: Establishes relationships and defines standard tables in SQLite/SQL Server.</li>
+                            <li>• TicketsRepository.cs: Concrete repository carrying SQL calls via Entity Framework Core.</li>
+                        </ul>
+                    </div>
+
+                    <div class="p-6 bg-corp-bg border border-corp-border rounded">
+                        <h3 class="font-bold text-corp-navy text-sm mb-1"><i class="fa-solid fa-satellite-dish text-corp-blue mr-2"></i>3. Presentation Layer (API Endpoints)</h3>
+                        <p class="text-slate-600 text-xs leading-relaxed mb-2">
+                            Exposes HTTPS routes, processes JWT authorization filters, parses input formats, and handles exceptions.
+                        </p>
+                        <ul class="text-xs font-mono text-corp-blue space-y-1">
+                            <li>• TicketsController.cs: Handles ticket listing, creating, status modification, and response dispatching.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: DATABASE & SEEDING -->
+            <div id="tab-dbprovider" class="tab-content hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-corp-navy mb-2">Database Provider Integration & Seeding</h2>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        The backend microservices natively support SQL Server for enterprise environments but easily compile using SQLite connection strings for portable local demos.
+                    </p>
+                </div>
+
+                <!-- Provider Switcher Code -->
+                <div class="bg-slate-900 p-5 rounded font-mono text-xs text-blue-300 space-y-1 overflow-x-auto shadow-inner">
+                    <div class="text-slate-500">// Program.cs DbContext Switcher Logic</div>
+                    <div>var connectionString = builder.Configuration.GetConnectionString(<span class="text-emerald-300">"DefaultConnection"</span>);</div>
+                    <div><span class="text-orange-300">if</span> (connectionString.Contains(<span class="text-emerald-300">".db"</span>) || connectionString.Contains(<span class="text-emerald-300">"Data Source"</span>))</div>
+                    <div>{</div>
+                    <div class="pl-4">builder.Services.AddDbContext&lt;<span class="text-yellow-300">TicketDbContext</span>&gt;(options =&gt;</div>
+                    <div class="pl-8">options.UseSqlite(connectionString));</div>
+                    <div>}</div>
+                    <div><span class="text-orange-300">else</span></div>
+                    <div>{</div>
+                    <div class="pl-4">builder.Services.AddDbContext&lt;<span class="text-yellow-300">TicketDbContext</span>&gt;(options =&gt;</div>
+                    <div class="pl-8">options.UseSqlServer(connectionString));</div>
+                    <div>}</div>
+                </div>
+
+                <!-- Database Seeding Walkthrough -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-corp-navy"><i class="fa-solid fa-seedling text-emerald-600 mr-2"></i>Self-Healing Startup Data Seeding</h3>
+                    <p class="text-slate-600 text-xs leading-relaxed">
+                        To enable immediate demonstration of analytics without manual setup, the Ticket Core microservice runs an automatic validation block in <code>Program.cs</code>:
+                    </p>
+                    <ol class="list-decimal pl-5 text-xs text-slate-600 space-y-2">
+                        <li><strong>EnsureCreated() Evaluation:</strong> Checks if the target SQLite file (e.g. <code>tickets.db</code>) exists. If missing, it builds the schema tables from scratch.</li>
+                        <li><strong>Empty Check:</strong> Checks if the <code>Tickets</code> table contains any records.</li>
+                        <li><strong>12-Ticket High-Fidelity Dataset Seed:</strong> If empty, it seeds 12 distinct tickets spanning Billing, Database, Network, Security, and Software issues. This data features custom date offsets (representing tickets opened over the past week), varying priorities (Critical, High, Medium, Low), and conversation records.</li>
+                    </ol>
+
+                    <div class="p-4 bg-corp-bg border border-corp-border rounded-lg">
+                        <div class="text-xs font-semibold text-corp-navy mb-1">Seeded Ticket Metrics Showcase:</div>
+                        <p class="text-xs text-slate-600">
+                            - <strong>SLA Calculations:</strong> Specific tickets (e.g. "Payment Gateway timeouts") are pre-marked as <code>Closed</code> with a <code>ResolvedAt</code> timestamp set to 3.5 hours after creation, while others have 48-hour offsets. This populates the UI with realistic SLA resolution metrics.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: EVENT BUS -->
+            <div id="tab-eventbus" class="tab-content hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-corp-navy mb-2">Asynchronous Event Messaging</h2>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Microservices maintain independent database records. When a customer submits a ticket, the TicketCore microservice publishes an integration event. The Notification microservice receives this event and acts accordingly.
+                    </p>
+                </div>
+
+                <!-- Event Sequence Diagram -->
+                <div class="pt-2">
+                    <h3 class="text-base font-bold text-corp-navy mb-2"><i class="fa-solid fa-arrows-spin mr-2"></i>Event Dispatch Sequence</h3>
+                    <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Customer
+    participant UI as Angular Frontend
+    participant GW as API Gateway
+    participant TC as TicketCore Service
+    participant DB as SQLite DB
+    participant EB as MassTransit Event Bus
+    participant NS as Notification Service
+
+    Customer->>UI: Create Ticket
+    UI->>GW: POST /api/tickets
+    GW->>TC: Forward Request
+    TC->>DB: Save new ticket
+    TC->>EB: Publish ITicketCreatedEvent
+    EB-->>NS: Deliver Event to TicketCreatedConsumer
+    NS->>NS: Process & log simulated Email Notification
+    TC-->>GW: Return 201 Created (TicketDto)
+    GW-->>UI: Return TicketDto
+    UI->>UI: Refresh Signals & metrics
+                    </pre>
+                </div>
+
+                <div class="p-6 bg-corp-bg border border-corp-border rounded">
+                    <h3 class="font-bold text-corp-navy text-sm mb-1"><i class="fa-solid fa-sliders text-corp-blue mr-2"></i>Message Broker Transport Settings</h3>
+                    <p class="text-slate-600 text-xs leading-relaxed">
+                        To simplify local execution, ResolveDesk features a MassTransit transport toggle. In local mode, it runs an **InMemory** loopback bus, executing consumers in-process. In production mode, it binds to **RabbitMQ** via AMQP protocols.
+                    </p>
+                </div>
+            </div>
+
+            <!-- SECTION: ANGULAR -->
+            <div id="tab-angular" class="tab-content hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-corp-navy mb-2">Angular 17 Signals & SLA Live Analytics</h2>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        The frontend uses standalone components and Angular Signals to manage state reactively, avoiding the heavy change-detection cycles of legacy Angular modules.
+                    </p>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="p-6 bg-corp-bg border border-corp-border rounded">
+                        <h3 class="font-bold text-corp-navy text-sm mb-2"><i class="fa-solid fa-calculator text-corp-blue mr-2"></i>Operational Stats Calculations</h3>
+                        <p class="text-slate-600 text-xs leading-relaxed mb-3">
+                            When ticket lists update, the dashboard calls `calculateStats()`. This method uses reactive arrays to compute metrics dynamically:
+                        </p>
+                        
+                        <div class="bg-slate-900 p-4 rounded font-mono text-xs text-blue-300 space-y-1 overflow-x-auto">
+                            <div>calculateStats() {</div>
+                            <div class="pl-4">this.totalTicketsCount = this.tickets.length;</div>
+                            <div class="pl-4">this.openTicketsCount = this.tickets.filter(t => t.status === 'Open').length;</div>
+                            <div class="pl-4">this.closedTicketsCount = this.tickets.filter(t => t.status === 'Closed').length;</div>
+                            <div class="text-slate-500 pl-4">// Calculate average resolution time (SLA)</div>
+                            <div class="pl-4">const resolved = this.tickets.filter(t => t.status === 'Closed' && t.resolvedAt);</div>
+                            <div class="pl-4">if (resolved.length > 0) {</div>
+                            <div class="pl-8">const totalHours = resolved.reduce((sum, t) => {</div>
+                            <div class="pl-12">const diff = new Date(t.resolvedAt).getTime() - new Date(t.createdAt).getTime();</div>
+                            <div class="pl-12">return sum + (diff / (1000 * 60 * 60));</div>
+                            <div class="pl-8">}, 0);</div>
+                            <div class="pl-8">this.averageResolutionHours = Math.round(totalHours / resolved.length);</div>
+                            <div class="pl-4">}</div>
+                            <div>}</div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-corp-bg border border-corp-border rounded">
+                        <h3 class="font-bold text-corp-navy text-sm mb-2"><i class="fa-solid fa-chart-bar text-corp-blue mr-2"></i>SVG & CSS Dynamic Progress Fills</h3>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Rather than pulling in heavy chart dependencies, category and priority distributions render using native, lightweight CSS layouts:
+                        </p>
+                        <ul class="list-disc pl-5 text-xs text-slate-600 space-y-1 mt-2">
+                            <li><strong>Category Progress Bars:</strong> Dynamic width bindings `[style.width.%]="item.percentage"` map directly to properties computed by our Signals workflow.</li>
+                            <li><strong>Priority indicators:</strong> Simple border-top colour cards display SLA volumes with zero extra paint cycles.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+
+    <!-- Presentation Setup Guide Block -->
+    <section id="setup" class="bg-white border-t border-corp-border py-12 px-6">
+        <div class="max-w-7xl mx-auto space-y-6">
+            <h2 class="text-xl font-bold text-corp-navy"><i class="fa-solid fa-terminal mr-2"></i>How to Launch the Presentation Demo</h2>
+            <p class="text-slate-600 text-sm max-w-3xl">
+                The entire system is designed for quick startup on any Windows or Linux host machine without Docker:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-3">
+                    <h3 class="text-sm font-semibold text-corp-blue uppercase tracking-wider">Option A: Linux / macOS</h3>
+                    <p class="text-xs text-slate-500">Assign executable permissions and launch the orchestrator bash script:</p>
+                    <div class="p-4 bg-slate-900 border border-corp-border rounded font-mono text-xs text-blue-300">
+                        chmod +x run-demo.sh<br>
+                        ./run-demo.sh
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <h3 class="text-sm font-semibold text-emerald-600 uppercase tracking-wider">Option B: Windows PowerShell</h3>
+                    <p class="text-xs text-slate-500">Run the PowerShell script bypass cmdlet to start all services:</p>
+                    <div class="p-4 bg-slate-900 border border-corp-border rounded font-mono text-xs text-emerald-300 font-semibold">
+                        Powershell.exe -ExecutionPolicy Bypass -File .\run-demo.ps1
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-corp-border bg-corp-navy py-6 text-center text-xs text-blue-100/50">
+        <p>&copy; 2026 ResolveDesk Portal. Managed in compliance with IBM Carbon & Citibank service standards.</p>
+    </footer>
+
+    <!-- Tab switcher logic -->
+    <script>
+        function switchTab(tabId) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Show the selected tab content
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            
+            // Remove active classes from all buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-corp-blue', 'text-white', 'shadow');
+                btn.classList.add('text-slate-600', 'hover:text-corp-blue', 'hover:bg-white', 'border-transparent', 'hover:border-corp-border');
+            });
+            
+            // Add active class to selected button
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.remove('text-slate-600', 'hover:text-corp-blue', 'hover:bg-white', 'border-transparent', 'hover:border-corp-border');
+            activeBtn.classList.add('bg-corp-blue', 'text-white', 'shadow');
+        }
+    </script>
+</body>
+</html>
