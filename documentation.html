@@ -125,8 +125,12 @@
                             <span>Angular 17 & SLA Stats</span>
                         </button>
                         <button onclick="switchTab('codeflow')" id="btn-codeflow" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded text-sm font-semibold transition duration-150 text-slate-600 hover:text-corp-blue hover:bg-white border border-transparent hover:border-corp-border">
+                            <i class="fa-solid fa-diagram-project w-5"></i>
+                            <span>Detailed Flowcharts</span>
+                        </button>
+                        <button onclick="switchTab('sequencediagrams')" id="btn-sequencediagrams" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded text-sm font-semibold transition duration-150 text-slate-600 hover:text-corp-blue hover:bg-white border border-transparent hover:border-corp-border">
                             <i class="fa-solid fa-arrows-spin w-5"></i>
-                            <span>Detailed Code Flow</span>
+                            <span>Detailed Sequence Diagrams</span>
                         </button>
                         <button onclick="switchTab('designpatterns')" id="btn-designpatterns" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded text-sm font-semibold transition duration-150 text-slate-600 hover:text-corp-blue hover:bg-white border border-transparent hover:border-corp-border">
                             <i class="fa-solid fa-wand-magic-sparkles w-5"></i>
@@ -400,7 +404,7 @@ sequenceDiagram
             <!-- SECTION: DETAILED CODE FLOW -->
             <div id="tab-codeflow" class="tab-content hidden space-y-8">
                 <div>
-                    <h2 class="text-2xl font-bold tracking-tight text-corp-navy mb-2">End-to-End Code Flow Walkthrough</h2>
+                    <h2 class="text-2xl font-bold tracking-tight text-corp-navy mb-2">End-to-End Flowcharts Walkthrough</h2>
                     <p class="text-slate-600 text-sm leading-relaxed">
                         This workflow outlines the exact sequence of network requests, routing rules, and backend message executions that power critical client-server operations.
                     </p>
@@ -468,6 +472,74 @@ graph TD
                         <div class="pl-4">}</div>
                         <div>}</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- SECTION: DETAILED SEQUENCE DIAGRAMS -->
+            <div id="tab-sequencediagrams" class="tab-content hidden space-y-8">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-corp-navy mb-2">Asynchronous Sequence Diagrams</h2>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        These sequence diagrams trace the step-by-step lifecycles of operations chronologically, showing how data is passed between the client, gateway, microservices, and databases.
+                    </p>
+                </div>
+
+                <!-- Part 1: Authentication Sequence -->
+                <div class="space-y-4">
+                    <h3 class="text-base font-bold text-corp-navy"><i class="fa-solid fa-key mr-2 text-corp-blue"></i>1. User Authentication (Login Sequence)</h3>
+                    <p class="text-xs text-slate-500">
+                        Visualizing how authentication verification flows, creates JWT, and responds.
+                    </p>
+                    
+                    <pre class="mermaid-lazy">
+sequenceDiagram
+    autonumber
+    actor User
+    participant UI as Angular UI (Port 4300)
+    participant GW as YARP Gateway (Port 5100)
+    participant ID as Identity Service (Port 5101)
+    
+    User->>UI: Enters Credentials & Clicks Login
+    UI->>GW: POST /api/auth/login
+    Note over GW: Routes match '/api/auth/{**catch-all}'
+    GW->>ID: Proxies to http://localhost:5101/api/auth/login
+    ID->>ID: Validates password (EF Core + SQLite)
+    ID->>ID: Generates signed JWT
+    ID-->>GW: Returns JSON { success, token, email, fullName, role }
+    GW-->>UI: Forwards Response
+    UI->>UI: Saves user state & token in localStorage
+                    </pre>
+                </div>
+
+                <!-- Part 2: Ticket Creation Sequence -->
+                <div class="space-y-4 pt-4 border-t border-corp-border">
+                    <h3 class="text-base font-bold text-corp-navy"><i class="fa-solid fa-ticket-simple mr-2 text-corp-blue"></i>2. Ticket Creation & Eventing Sequence</h3>
+                    <p class="text-xs text-slate-500">
+                        Tracks client ticket generation, persistence database updates, and asynchronous event bus alerts.
+                    </p>
+                    
+                    <pre class="mermaid-lazy">
+sequenceDiagram
+    autonumber
+    actor Customer
+    participant UI as Angular UI (Port 4300)
+    participant GW as YARP Gateway (Port 5100)
+    participant TC as Ticket Core Service (Port 5103)
+    participant EB as MassTransit Event Bus (InMemory)
+    
+    Customer->>UI: Clicks "Submit Ticket"
+    UI->>GW: POST /api/tickets (includes JWT Header)
+    Note over GW: Routes match '/api/tickets/{**catch-all}'
+    GW->>TC: Proxies to http://localhost:5103/api/tickets
+    Note over TC: JWT Bearer Token validated
+    TC->>TC: Creates database record (EF Core + SQLite)
+    TC->>EB: Publishes ITicketCreatedEvent
+    EB-->>TC: Delivers event to TicketCreatedConsumer (in-process)
+    Note over TC: Consumer processes and logs simulated notification
+    TC-->>GW: Returns 201 Created (Ticket Data Transfer Object)
+    GW-->>UI: Forwards Response
+    UI->>UI: Appends to Signal state & updates charts
+                    </pre>
                 </div>
             </div>
 
