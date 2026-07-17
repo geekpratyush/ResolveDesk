@@ -202,7 +202,7 @@
                     <h3 class="text-base font-bold text-corp-navy mb-2"><i class="fa-solid fa-diagram-project mr-2"></i>System Architecture Topology</h3>
                     <p class="text-xs text-slate-500 mb-4">The following diagram illustrates how the frontend talks to the microservices gateway and how the event loopback synchronizes tasks:</p>
                     
-                    <pre class="mermaid">
+                    <pre class="mermaid-lazy">
 graph TD
     UI[Angular 17 Client<br>Port: 4300] -->|HTTP Calls| GW[YARP API Gateway<br>Port: 5100]
     GW -->|Proxy /api/auth| ID[Identity Service<br>Port: 5101]
@@ -319,7 +319,7 @@ graph TD
                 <!-- Event Sequence Diagram -->
                 <div class="pt-2">
                     <h3 class="text-base font-bold text-corp-navy mb-2"><i class="fa-solid fa-arrows-spin mr-2"></i>Event Dispatch Sequence</h3>
-                    <pre class="mermaid">
+                    <pre class="mermaid-lazy">
 sequenceDiagram
     autonumber
     actor Customer
@@ -413,7 +413,7 @@ sequenceDiagram
                         Tracks how login requests flow from the Angular 17 interface through the API Gateway, reaching ASP.NET Core Identity to produce a JWT.
                     </p>
                     
-                    <pre class="mermaid">
+                    <pre class="mermaid-lazy">
 graph LR
     UI[Angular UI<br>Port: 4300] -->|POST /api/auth/login| GW[YARP Gateway<br>Port: 5100]
     GW -->|Proxy Cluster Route| ID[Identity Service<br>Port: 5101]
@@ -447,7 +447,7 @@ graph LR
                         Details client submission, reverse proxying, JWT middleware authentication, SQLite write, and the MassTransit InMemory notification broadcast.
                     </p>
                     
-                    <pre class="mermaid">
+                    <pre class="mermaid-lazy">
 graph TD
     UI[Angular UI<br>Port: 4300] -->|POST /api/tickets| GW[YARP Gateway<br>Port: 5100]
     GW -->|Proxy Route| TC[Ticket Core Service<br>Port: 5103]
@@ -594,7 +594,24 @@ graph TD
             });
             
             // Show the selected tab content
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            const activeTab = document.getElementById('tab-' + tabId);
+            activeTab.classList.remove('hidden');
+
+            // Render any unrendered mermaid diagrams in this tab
+            const lazyMermaids = activeTab.querySelectorAll('.mermaid-lazy');
+            if (lazyMermaids.length > 0) {
+                lazyMermaids.forEach(el => {
+                    el.classList.remove('mermaid-lazy');
+                    el.classList.add('mermaid');
+                });
+                try {
+                    mermaid.run({
+                        nodes: Array.from(lazyMermaids)
+                    });
+                } catch (e) {
+                    console.error("Mermaid initialization failed", e);
+                }
+            }
             
             // Remove active classes from all buttons
             const buttons = document.querySelectorAll('.tab-btn');
