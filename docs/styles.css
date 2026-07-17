@@ -199,6 +199,7 @@ td code {
     padding: 20px 24px; border-radius: var(--radius);
     font-size: 12px; line-height: 1.7; overflow-x: auto;
     margin: 16px 0; box-shadow: var(--shadow);
+    white-space: pre; tab-size: 4;
 }
 .code-block .comment { color: var(--gray-500); }
 .code-block .keyword { color: #c084fc; }

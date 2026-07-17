@@ -52,7 +52,7 @@
             </div>
 
             <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Login Endpoint — JWT Token Generation</h3>
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// AuthController.cs — Login flow</span>
 [HttpPost(<span class="string">"login"</span>)]
 <span class="keyword">public async</span> Task&lt;IActionResult&gt; Login([FromBody] LoginDto model) {
@@ -71,10 +71,10 @@
         role = roles.FirstOrDefault()
     });
 }
-            </div>
+            </pre>
 
             <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">JWT Token Structure (HS256)</h3>
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// AuthController.cs — Token generation with claims</span>
 <span class="keyword">private string</span> GenerateJwtToken(<span class="type">ApplicationUser</span> user, IList&lt;<span class="type">string</span>&gt; roles) {
     <span class="keyword">var</span> claims = <span class="keyword">new</span> List&lt;Claim&gt; {
@@ -94,7 +94,7 @@
     );
     <span class="keyword">return new</span> JwtSecurityTokenHandler().WriteToken(token);
 }
-            </div>
+            </pre>
         </section>
 
         <!-- TicketsController -->
@@ -137,7 +137,7 @@ sequenceDiagram
                 </pre>
             </div>
 
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// TicketsController.cs — Create ticket with event publishing</span>
 [HttpPost]
 <span class="keyword">public async</span> Task&lt;ActionResult&gt; CreateTicket([FromBody] <span class="type">CreateTicketDto</span> dto) {
@@ -165,14 +165,14 @@ sequenceDiagram
 
     <span class="keyword">return</span> CreatedAtAction(nameof(GetTicket), <span class="keyword">new</span> { id = ticket.Id }, MapToTicketDto(ticket));
 }
-            </div>
+            </pre>
 
             <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Auto-Status Transition on Reply</h3>
             <div class="info-box warning">
                 <i class="fa-solid fa-triangle-exclamation"></i>
                 <div><strong>Business Rule:</strong> When an Admin or Support staff replies to an "Open" ticket, the status is <strong>automatically set to "InProgress"</strong> server-side. This ensures SLA tracking starts from the first agent response.</div>
             </div>
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// TicketsController.cs — Auto-transition on support reply</span>
 <span class="keyword">if</span> (isAdminOrSupport && ticket.Status == <span class="type">TicketStatus</span>.Open) {
     ticket.Status = <span class="type">TicketStatus</span>.InProgress;
@@ -182,10 +182,10 @@ sequenceDiagram
         NewStatus = <span class="string">"InProgress"</span>,
     });
 }
-            </div>
+            </pre>
 
             <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">RBAC Authorization</h3>
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// Status changes restricted to Admin/SupportStaff roles</span>
 [HttpPut(<span class="string">"{id}/status"</span>)]
 [Authorize(Roles = <span class="string">"Admin,SupportStaff"</span>)]  <span class="comment">// Role-based access control</span>
@@ -193,7 +193,7 @@ sequenceDiagram
     <span class="comment">// Only Admin/Support can reach this endpoint</span>
     <span class="comment">// Customers get 403 Forbidden automatically</span>
 }
-            </div>
+            </pre>
         </section>
     </main>
 

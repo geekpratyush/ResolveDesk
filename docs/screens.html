@@ -54,7 +54,7 @@
             </div>
 
             <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">How It Works (Code)</h3>
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// login.component.ts — Form submission handler</span>
 onSubmit() {
     <span class="keyword">this</span>.isLoading = <span class="keyword">true</span>;
@@ -67,8 +67,8 @@ onSubmit() {
         }
     });
 }
-            </div>
-            <div class="code-block">
+            </pre>
+            <pre class="code-block">
 <span class="comment">// auth.service.ts — Posts to Gateway, stores JWT in localStorage</span>
 login(email: <span class="type">string</span>, password: <span class="type">string</span>): <span class="type">Observable</span>&lt;any&gt; {
     <span class="keyword">return this</span>.http.post&lt;any&gt;(`${<span class="keyword">this</span>.apiUrl}/login`, { email, password }).pipe(
@@ -78,7 +78,7 @@ login(email: <span class="type">string</span>, password: <span class="type">stri
         })
     );
 }
-            </div>
+            </pre>
 
             <div class="info-box tip">
                 <i class="fa-solid fa-lightbulb"></i>
@@ -116,7 +116,7 @@ login(email: <span class="type">string</span>, password: <span class="type">stri
             </div>
 
             <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Role-Based Visibility (Code)</h3>
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// dashboard.component.ts — Role check for admin/support features</span>
 isAdminOrSupport(): <span class="type">boolean</span> {
     <span class="keyword">if</span> (!<span class="keyword">this</span>.currentUser) <span class="keyword">return false</span>;
@@ -125,9 +125,9 @@ isAdminOrSupport(): <span class="type">boolean</span> {
 }
 
 <span class="comment">// Used in template: *ngIf="isAdminOrSupport()" to show/hide status dropdown</span>
-            </div>
+            </pre>
 
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// dashboard.component.ts — Stats calculation using Angular Signals pattern</span>
 calculateStats() {
     <span class="keyword">this</span>.totalTicketsCount = <span class="keyword">this</span>.tickets.length;
@@ -140,7 +140,7 @@ calculateStats() {
     }, 0);
     <span class="keyword">this</span>.averageResolutionHours = Math.round(totalHours / closedTickets.length);
 }
-            </div>
+            </pre>
         </section>
 
         <!-- SUPPORT DASHBOARD -->
@@ -200,7 +200,7 @@ calculateStats() {
             </div>
 
             <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Server-Side Ticket Filtering (Code)</h3>
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// TicketsController.cs — Only returns customer's own tickets if not admin/support</span>
 [HttpGet]
 <span class="keyword">public async</span> Task&lt;ActionResult&gt; GetTickets() {
@@ -213,9 +213,9 @@ calculateStats() {
     <span class="keyword">var</span> tickets = <span class="keyword">await</span> query.OrderByDescending(t => t.CreatedAt).ToListAsync();
     <span class="keyword">return</span> Ok(tickets.Select(MapToTicketDto));
 }
-            </div>
+            </pre>
 
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// dashboard.component.ts — Create ticket handler</span>
 onCreateTicket() {
     <span class="keyword">this</span>.ticketService.createTicket(
@@ -230,7 +230,7 @@ onCreateTicket() {
         }
     });
 }
-            </div>
+            </pre>
         </section>
     </main>
 

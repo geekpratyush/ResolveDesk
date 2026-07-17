@@ -49,7 +49,7 @@ graph LR
             </div>
 
             <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">YARP Route Configuration</h3>
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// src/ResolveDesk.Gateway/appsettings.json</span>
 {
   <span class="string">"ReverseProxy"</span>: {
@@ -69,7 +69,7 @@ graph LR
     }
   }
 }
-            </div>
+            </pre>
 
             <div class="info-box tip">
                 <i class="fa-solid fa-lightbulb"></i>
@@ -99,7 +99,7 @@ graph TD
             </div>
 
             <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Dual Provider Detection Code</h3>
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// Program.cs — Dual DB provider setup</span>
 <span class="keyword">var</span> connectionString = builder.Configuration.GetConnectionString(<span class="string">"DefaultConnection"</span>);
 <span class="keyword">var</span> isSqlite = connectionString.Contains(<span class="string">"Data Source="</span>);
@@ -109,7 +109,7 @@ graph TD
 } <span class="keyword">else</span> {
     options.UseSqlServer(connectionString); <span class="comment">// Production/staging</span>
 }
-            </div>
+            </pre>
 
             <div class="info-box note">
                 <i class="fa-solid fa-info-circle"></i>
@@ -142,7 +142,7 @@ sequenceDiagram
             </div>
 
             <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">MassTransit Registration</h3>
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// Program.cs — MassTransit InMemory configuration</span>
 builder.Services.AddMassTransit(x => {
     x.AddConsumer&lt;<span class="type">TicketCreatedConsumer</span>&gt;();
@@ -152,10 +152,10 @@ builder.Services.AddMassTransit(x => {
         cfg.ConfigureEndpoints(context); <span class="comment">// Auto-register consumer endpoints</span>
     });
 });
-            </div>
+            </pre>
 
             <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Event Interfaces (Shared Contract)</h3>
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// src/ResolveDesk.Shared/Events/ITicketCreatedEvent.cs</span>
 <span class="keyword">public interface</span> <span class="type">ITicketCreatedEvent</span> {
     Guid TicketId { get; }
@@ -164,7 +164,7 @@ builder.Services.AddMassTransit(x => {
     <span class="type">string</span> CustomerEmail { get; }
     DateTime CreatedAt { get; }
 }
-            </div>
+            </pre>
 
             <div class="info-box warning">
                 <i class="fa-solid fa-triangle-exclamation"></i>
@@ -199,7 +199,7 @@ sequenceDiagram
             </div>
 
             <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Frontend Interceptor</h3>
-            <div class="code-block">
+            <pre class="code-block">
 <span class="comment">// src/ResolveDesk.UI/src/app/interceptors/auth.interceptor.ts</span>
 <span class="keyword">export const</span> authInterceptor: <span class="type">HttpInterceptorFn</span> = (req, next) => {
     <span class="keyword">const</span> authService = inject(<span class="type">AuthService</span>);
@@ -212,7 +212,7 @@ sequenceDiagram
     }
     <span class="keyword">return</span> next(req);
 };
-            </div>
+            </pre>
         </section>
     </main>
 
