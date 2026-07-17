@@ -16,12 +16,7 @@ function CleanUp {
     }
     
     Write-Host "All services stopped successfully." -ForegroundColor Green
-    Exit
 }
-
-# Register clean-up handler for normal terminal exits
-$currentAction = $MyInvocation.MyCommand.Name
-Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action { CleanUp } | Out-Null
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "          ResolveDesk Windows Demo Orchestrator          " -ForegroundColor Cyan
@@ -81,19 +76,9 @@ Write-Host "  -> Gateway API:      http://localhost:5000" -ForegroundColor Cyan
 Write-Host "  -> Identity API:     http://localhost:5001" -ForegroundColor Cyan
 Write-Host "  -> Ticket Core API:  http://localhost:5002" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Green
-Write-Host "Press Ctrl+C or close this window to terminate all services." -ForegroundColor Yellow
 
-# Watch loop for termination
 try {
-    while ($true) {
-        # Check if processes have exited prematurely
-        if ($pIdentity.HasExited -or $pTicketCore.HasExited -or $pGateway.HasExited) {
-            Write-Host ""
-            Write-Host "Warning: One of the backend services exited unexpectedly." -ForegroundColor Red
-            CleanUp
-        }
-        Start-Sleep -Seconds 1
-    }
+    Read-Host "Press [Enter] to terminate all services"
 }
 finally {
     CleanUp
