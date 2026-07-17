@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend API Controllers — ResolveDesk Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });</script>
+</head>
+<body>
+    <nav class="topnav">
+        <div class="topnav-inner">
+            <div class="brand"><i class="fa-solid fa-ticket-simple"></i><span>ResolveDesk</span><span class="badge">Developer Docs</span></div>
+            <div class="nav-links">
+                <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="architecture.html"><i class="fa-solid fa-cubes"></i> Architecture</a>
+                <a href="screens.html"><i class="fa-solid fa-desktop"></i> UI Screens</a>
+                <a href="backend.html" class="active"><i class="fa-solid fa-server"></i> Backend APIs</a>
+                <a href="patterns.html"><i class="fa-solid fa-wand-magic-sparkles"></i> Design Patterns</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero" style="padding: 48px 24px 40px;">
+        <div class="hero-content">
+            <h1>Backend API Controllers</h1>
+            <p class="hero-subtitle">Full code walkthrough of AuthController and TicketsController — registration, JWT generation, RBAC, CRUD, and event publishing.</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- AuthController -->
+        <section class="section">
+            <h2 class="section-title"><i class="fa-solid fa-user-lock"></i> AuthController (Identity Service)</h2>
+            <p class="section-desc">Located at <code>src/ResolveDesk.Services.Identity/Controllers/AuthController.cs</code>. Handles user registration, login, and OAuth flows.</p>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">API Endpoints</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Method</th><th>Route</th><th>Auth</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="role-badge" style="background:#dcfce7;color:#16a34a;">POST</span></td><td><code>/api/auth/register</code></td><td>Anonymous</td><td>Register new user with email, password, fullName, role</td></tr>
+                        <tr><td><span class="role-badge" style="background:#dcfce7;color:#16a34a;">POST</span></td><td><code>/api/auth/login</code></td><td>Anonymous</td><td>Authenticate user, return JWT token</td></tr>
+                        <tr><td><span class="role-badge" style="background:#dcfce7;color:#16a34a;">POST</span></td><td><code>/api/auth/oauth-login</code></td><td>Anonymous</td><td>OAuth provider login (Google, GitHub)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Login Endpoint — JWT Token Generation</h3>
+            <div class="code-block">
+<span class="comment">// AuthController.cs — Login flow</span>
+[HttpPost(<span class="string">"login"</span>)]
+<span class="keyword">public async</span> Task&lt;IActionResult&gt; Login([FromBody] LoginDto model) {
+    <span class="keyword">var</span> user = <span class="keyword">await</span> _userManager.FindByEmailAsync(model.Email);
+    <span class="keyword">if</span> (user == <span class="keyword">null</span> || !<span class="keyword">await</span> _userManager.CheckPasswordAsync(user, model.Password))
+        <span class="keyword">return</span> Unauthorized(<span class="keyword">new</span> { error = <span class="string">"Invalid credentials"</span> });
+
+    <span class="keyword">var</span> roles = <span class="keyword">await</span> _userManager.GetRolesAsync(user);
+    <span class="keyword">var</span> token = GenerateJwtToken(user, roles);
+
+    <span class="keyword">return</span> Ok(<span class="keyword">new</span> {
+        success = <span class="keyword">true</span>,
+        token,
+        email = user.Email,
+        fullName = user.FullName,
+        role = roles.FirstOrDefault()
+    });
+}
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">JWT Token Structure (HS256)</h3>
+            <div class="code-block">
+<span class="comment">// AuthController.cs — Token generation with claims</span>
+<span class="keyword">private string</span> GenerateJwtToken(<span class="type">ApplicationUser</span> user, IList&lt;<span class="type">string</span>&gt; roles) {
+    <span class="keyword">var</span> claims = <span class="keyword">new</span> List&lt;Claim&gt; {
+        <span class="keyword">new</span> Claim(JwtRegisteredClaimNames.Sub, user.Id),
+        <span class="keyword">new</span> Claim(JwtRegisteredClaimNames.Email, user.Email),
+        <span class="keyword">new</span> Claim(<span class="string">"name"</span>, user.FullName),
+    };
+    <span class="keyword">foreach</span> (<span class="keyword">var</span> role <span class="keyword">in</span> roles)
+        claims.Add(<span class="keyword">new</span> Claim(<span class="string">"roles"</span>, role));
+
+    <span class="keyword">var</span> key = <span class="keyword">new</span> SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
+    <span class="keyword">var</span> creds = <span class="keyword">new</span> SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+    <span class="keyword">var</span> token = <span class="keyword">new</span> JwtSecurityToken(
+        expires: DateTime.UtcNow.AddDays(7),
+        claims: claims,
+        signingCredentials: creds
+    );
+    <span class="keyword">return new</span> JwtSecurityTokenHandler().WriteToken(token);
+}
+            </div>
+        </section>
+
+        <!-- TicketsController -->
+        <section class="section" style="border-top: 1px solid var(--gray-200); padding-top: 48px;">
+            <h2 class="section-title"><i class="fa-solid fa-ticket-simple"></i> TicketsController (Ticket Core Service)</h2>
+            <p class="section-desc">Located at <code>src/ResolveDesk.Services.TicketCore/Controllers/TicketsController.cs</code>. Full CRUD with RBAC, conversation threads, and event publishing.</p>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">API Endpoints</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Method</th><th>Route</th><th>Auth</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><span class="role-badge" style="background:#dbeafe;color:#2563eb;">GET</span></td><td><code>/api/tickets</code></td><td>JWT Required</td><td>List tickets (filtered by role)</td></tr>
+                        <tr><td><span class="role-badge" style="background:#dbeafe;color:#2563eb;">GET</span></td><td><code>/api/tickets/{id}</code></td><td>JWT Required</td><td>Get ticket detail with responses</td></tr>
+                        <tr><td><span class="role-badge" style="background:#dcfce7;color:#16a34a;">POST</span></td><td><code>/api/tickets</code></td><td>JWT Required</td><td>Create ticket + publish event</td></tr>
+                        <tr><td><span class="role-badge" style="background:#dcfce7;color:#16a34a;">POST</span></td><td><code>/api/tickets/{id}/responses</code></td><td>JWT Required</td><td>Add response + auto-status change</td></tr>
+                        <tr><td><span class="role-badge" style="background:#fef3c7;color:#d97706;">PUT</span></td><td><code>/api/tickets/{id}/status</code></td><td>Admin/Support</td><td>Update ticket status + publish event</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Create Ticket — Full Flow</h3>
+            <div class="mermaid-wrapper">
+                <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Ctrl as TicketsController
+    participant DB as SQLite (tickets.db)
+    participant Bus as MassTransit InMemory
+    participant Consumer as TicketCreatedConsumer
+
+    Client->>Ctrl: POST /api/tickets { title, description, category, priority }
+    Ctrl->>Ctrl: Extract userId from JWT claims
+    Ctrl->>DB: INSERT INTO Tickets VALUES(...)
+    Ctrl->>Bus: Publish ITicketCreatedEvent
+    Bus-->>Consumer: Deliver event in-process
+    Consumer->>Consumer: Log notification
+    Ctrl-->>Client: 201 Created (TicketDto)
+                </pre>
+            </div>
+
+            <div class="code-block">
+<span class="comment">// TicketsController.cs — Create ticket with event publishing</span>
+[HttpPost]
+<span class="keyword">public async</span> Task&lt;ActionResult&gt; CreateTicket([FromBody] <span class="type">CreateTicketDto</span> dto) {
+    <span class="keyword">var</span> ticket = <span class="keyword">new</span> <span class="type">Ticket</span> {
+        Id = Guid.NewGuid(),
+        CustomerId = GetUserId(),          <span class="comment">// From JWT "sub" claim</span>
+        CustomerEmail = GetUserEmail(),    <span class="comment">// From JWT "email" claim</span>
+        Title = dto.Title,
+        Description = dto.Description,
+        Category = dto.Category,
+        Priority = dto.Priority,
+        Status = <span class="type">TicketStatus</span>.Open,
+        CreatedAt = DateTime.UtcNow,
+    };
+
+    _context.Tickets.Add(ticket);
+    <span class="keyword">await</span> _context.SaveChangesAsync();
+
+    <span class="comment">// Fire-and-forget event to MassTransit InMemory bus</span>
+    <span class="keyword">await</span> _publishEndpoint.Publish&lt;<span class="type">ITicketCreatedEvent</span>&gt;(<span class="keyword">new</span> {
+        TicketId = ticket.Id,
+        Title = ticket.Title,
+        CustomerEmail = ticket.CustomerEmail,
+    });
+
+    <span class="keyword">return</span> CreatedAtAction(nameof(GetTicket), <span class="keyword">new</span> { id = ticket.Id }, MapToTicketDto(ticket));
+}
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Auto-Status Transition on Reply</h3>
+            <div class="info-box warning">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <div><strong>Business Rule:</strong> When an Admin or Support staff replies to an "Open" ticket, the status is <strong>automatically set to "InProgress"</strong> server-side. This ensures SLA tracking starts from the first agent response.</div>
+            </div>
+            <div class="code-block">
+<span class="comment">// TicketsController.cs — Auto-transition on support reply</span>
+<span class="keyword">if</span> (isAdminOrSupport && ticket.Status == <span class="type">TicketStatus</span>.Open) {
+    ticket.Status = <span class="type">TicketStatus</span>.InProgress;
+    <span class="keyword">await</span> _publishEndpoint.Publish&lt;<span class="type">ITicketStatusChangedEvent</span>&gt;(<span class="keyword">new</span> {
+        TicketId = ticket.Id,
+        PreviousStatus = <span class="string">"Open"</span>,
+        NewStatus = <span class="string">"InProgress"</span>,
+    });
+}
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">RBAC Authorization</h3>
+            <div class="code-block">
+<span class="comment">// Status changes restricted to Admin/SupportStaff roles</span>
+[HttpPut(<span class="string">"{id}/status"</span>)]
+[Authorize(Roles = <span class="string">"Admin,SupportStaff"</span>)]  <span class="comment">// Role-based access control</span>
+<span class="keyword">public async</span> Task&lt;IActionResult&gt; UpdateStatus(Guid id, [FromBody] <span class="type">UpdateStatusDto</span> dto) {
+    <span class="comment">// Only Admin/Support can reach this endpoint</span>
+    <span class="comment">// Customers get 403 Forbidden automatically</span>
+}
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 ResolveDesk Developer Documentation.</p>
+    </footer>
+</body>
+</html>

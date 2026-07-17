@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Patterns — ResolveDesk Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });</script>
+</head>
+<body>
+    <nav class="topnav">
+        <div class="topnav-inner">
+            <div class="brand"><i class="fa-solid fa-ticket-simple"></i><span>ResolveDesk</span><span class="badge">Developer Docs</span></div>
+            <div class="nav-links">
+                <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="architecture.html"><i class="fa-solid fa-cubes"></i> Architecture</a>
+                <a href="screens.html"><i class="fa-solid fa-desktop"></i> UI Screens</a>
+                <a href="backend.html"><i class="fa-solid fa-server"></i> Backend APIs</a>
+                <a href="patterns.html" class="active"><i class="fa-solid fa-wand-magic-sparkles"></i> Design Patterns</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero" style="padding: 48px 24px 40px;">
+        <div class="hero-content">
+            <h1>Design Patterns Portfolio</h1>
+            <p class="hero-subtitle">A catalog of software engineering patterns used across the .NET backend and Angular frontend for maintainability, testability, and scalability.</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="section">
+            <h2 class="section-title"><i class="fa-solid fa-cubes"></i> Architectural Patterns</h2>
+
+            <div class="pattern-card">
+                <h3><i class="fa-solid fa-cube"></i> Clean Architecture (Hexagonal / Ports & Adapters)</h3>
+                <div class="where"><i class="fa-solid fa-folder"></i> Backend microservice project structure</div>
+                <p>Domain entities (<code>Ticket.cs</code>, <code>TicketResponse.cs</code>) are isolated from infrastructure concerns. EF Core <code>DbContext</code> implementations and ASP.NET controllers sit at the outer layers, allowing the database provider to be swapped (SQLite ↔ SQL Server) without modifying business logic.</p>
+                <div class="mermaid-wrapper" style="margin-top: 16px;">
+                    <pre class="mermaid">
+graph TB
+    subgraph Presentation Layer
+        API["ASP.NET Controllers"]
+    end
+    subgraph Application Layer
+        DTOs["DTOs & Mapping"]
+    end
+    subgraph Domain Layer
+        Models["Ticket, TicketResponse, TicketStatus"]
+        Events["ITicketCreatedEvent, ITicketStatusChangedEvent"]
+    end
+    subgraph Infrastructure Layer
+        DB["EF Core DbContext"]
+        Bus["MassTransit InMemory"]
+    end
+    API --> DTOs --> Models
+    DB --> Models
+    Bus --> Events
+                    </pre>
+                </div>
+            </div>
+
+            <div class="pattern-card">
+                <h3><i class="fa-solid fa-network-wired"></i> API Gateway Pattern</h3>
+                <div class="where"><i class="fa-solid fa-folder"></i> <code>src/ResolveDesk.Gateway/</code> — YARP Reverse Proxy</div>
+                <p>Provides a single network entry point (<code>localhost:5100</code>) for the frontend. Routes are declaratively configured in <code>appsettings.json</code>. This abstracts internal service addresses, simplifies CORS, and centralizes cross-cutting concerns like logging.</p>
+                <div class="code-block">
+<span class="comment">// The Angular frontend only knows ONE URL:</span>
+<span class="keyword">private</span> apiUrl = <span class="string">'http://localhost:5100/api/tickets'</span>;
+<span class="comment">// YARP transparently routes to http://localhost:5103/api/tickets</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" style="border-top: 1px solid var(--gray-200); padding-top: 48px;">
+            <h2 class="section-title"><i class="fa-solid fa-gears"></i> Behavioral Patterns</h2>
+
+            <div class="pattern-card">
+                <h3><i class="fa-solid fa-syringe"></i> Dependency Injection (DI)</h3>
+                <div class="where"><i class="fa-solid fa-folder"></i> <code>Program.cs</code> in each service + Constructor injection in controllers</div>
+                <p>ASP.NET Core's built-in IoC container resolves all dependencies: <code>DbContext</code>, <code>IPublishEndpoint</code> (MassTransit), <code>UserManager&lt;T&gt;</code> (Identity), and <code>ILogger&lt;T&gt;</code>. No manual object creation — everything is wired at startup.</p>
+                <div class="code-block">
+<span class="comment">// TicketsController.cs — Constructor injection</span>
+<span class="keyword">public</span> TicketsController(
+    <span class="type">TicketDbContext</span> context,           <span class="comment">// EF Core database context</span>
+    <span class="type">IPublishEndpoint</span> publishEndpoint,  <span class="comment">// MassTransit event publisher</span>
+    ILogger&lt;<span class="type">TicketsController</span>&gt; logger  <span class="comment">// Structured logging</span>
+) { ... }
+                </div>
+            </div>
+
+            <div class="pattern-card">
+                <h3><i class="fa-solid fa-arrows-split-up-and-left"></i> Publish-Subscribe (Pub/Sub)</h3>
+                <div class="where"><i class="fa-solid fa-folder"></i> MassTransit InMemory Bus — <code>Consumers/</code> folder in TicketCore</div>
+                <p>Event producers (<code>TicketsController</code>) publish messages (<code>ITicketCreatedEvent</code>, <code>ITicketStatusChangedEvent</code>) without knowing who consumes them. MassTransit routes events to registered consumers (<code>TicketCreatedConsumer</code>, <code>TicketStatusChangedConsumer</code>) automatically.</p>
+                <div class="code-block">
+<span class="comment">// Producer: TicketsController.cs</span>
+<span class="keyword">await</span> _publishEndpoint.Publish&lt;<span class="type">ITicketCreatedEvent</span>&gt;(<span class="keyword">new</span> { ... });
+
+<span class="comment">// Consumer: TicketCreatedConsumer.cs — Decoupled handler</span>
+<span class="keyword">public class</span> <span class="type">TicketCreatedConsumer</span> : IConsumer&lt;<span class="type">ITicketCreatedEvent</span>&gt; {
+    <span class="keyword">public async</span> Task Consume(ConsumeContext&lt;<span class="type">ITicketCreatedEvent</span>&gt; context) {
+        _logger.LogInformation($<span class="string">"Ticket created: {context.Message.TicketId}"</span>);
+    }
+}
+                </div>
+            </div>
+
+            <div class="pattern-card">
+                <h3><i class="fa-solid fa-folder-open"></i> Repository Pattern (via EF Core)</h3>
+                <div class="where"><i class="fa-solid fa-folder"></i> <code>TicketDbContext</code> acts as the Unit of Work + Repository</div>
+                <p>EF Core's <code>DbContext</code> naturally implements the Repository pattern through <code>DbSet&lt;T&gt;</code> collections. Controllers query via LINQ (<code>_context.Tickets.Where(...)</code>) and persist changes with <code>SaveChangesAsync()</code>.</p>
+                <div class="code-block">
+<span class="comment">// Repository-like access via EF Core DbSet</span>
+<span class="keyword">var</span> tickets = <span class="keyword">await</span> _context.Tickets
+    .Include(t => t.Responses)    <span class="comment">// Eager load navigation property</span>
+    .Where(t => t.CustomerId == userId)
+    .OrderByDescending(t => t.CreatedAt)
+    .ToListAsync();
+                </div>
+            </div>
+        </section>
+
+        <section class="section" style="border-top: 1px solid var(--gray-200); padding-top: 48px;">
+            <h2 class="section-title"><i class="fa-solid fa-code"></i> Frontend Patterns</h2>
+
+            <div class="pattern-card">
+                <h3><i class="fa-solid fa-bolt"></i> Reactive State Store (Angular Signals)</h3>
+                <div class="where"><i class="fa-solid fa-folder"></i> <code>auth.service.ts</code> — <code>currentUser = signal&lt;User | null&gt;(null)</code></div>
+                <p>Instead of RxJS BehaviorSubjects or NgRx stores, the app uses Angular 17's native <strong>Signals</strong> for state management. The <code>currentUser</code> signal automatically triggers change detection in consuming components when updated — no Zone.js required, no manual subscription cleanup.</p>
+                <div class="code-block">
+<span class="comment">// auth.service.ts — Signal-based state</span>
+currentUser = signal&lt;<span class="type">User</span> | <span class="keyword">null</span>&gt;(<span class="keyword">null</span>);
+
+<span class="comment">// On login success:</span>
+<span class="keyword">this</span>.currentUser.set(user); <span class="comment">// All dependent UI updates automatically</span>
+
+<span class="comment">// In dashboard.component.ts:</span>
+<span class="keyword">this</span>.currentUser = <span class="keyword">this</span>.authService.currentUser(); <span class="comment">// Read signal value</span>
+                </div>
+            </div>
+
+            <div class="pattern-card">
+                <h3><i class="fa-solid fa-filter"></i> Intercepting Filter (HTTP Interceptor)</h3>
+                <div class="where"><i class="fa-solid fa-folder"></i> <code>src/ResolveDesk.UI/src/app/interceptors/auth.interceptor.ts</code></div>
+                <p>A functional HTTP interceptor (<code>HttpInterceptorFn</code>) automatically attaches the JWT Bearer token to every outbound API request. This eliminates the need to manually add authorization headers in every service call.</p>
+                <div class="code-block">
+<span class="comment">// auth.interceptor.ts — Automatic token attachment</span>
+<span class="keyword">export const</span> authInterceptor: <span class="type">HttpInterceptorFn</span> = (req, next) => {
+    <span class="keyword">const</span> user = inject(<span class="type">AuthService</span>).currentUser();
+    <span class="keyword">if</span> (user?.token) {
+        req = req.clone({
+            setHeaders: { Authorization: `Bearer ${user.token}` }
+        });
+    }
+    <span class="keyword">return</span> next(req);
+};
+
+<span class="comment">// Registered in app.config.ts:</span>
+provideHttpClient(withInterceptors([authInterceptor]))
+                </div>
+            </div>
+
+            <div class="pattern-card">
+                <h3><i class="fa-solid fa-route"></i> Route Guards</h3>
+                <div class="where"><i class="fa-solid fa-folder"></i> <code>src/ResolveDesk.UI/src/app/guards/auth.guard.ts</code></div>
+                <p>A functional route guard protects the <code>/dashboard</code> route. If the user is not authenticated, they are redirected to <code>/login</code>. This is a client-side check complementing the server-side JWT validation.</p>
+                <div class="code-block">
+<span class="comment">// app.routes.ts — Protected route</span>
+{ path: <span class="string">'dashboard'</span>, component: DashboardComponent, canActivate: [authGuard] }
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 ResolveDesk Developer Documentation.</p>
+    </footer>
+</body>
+</html>

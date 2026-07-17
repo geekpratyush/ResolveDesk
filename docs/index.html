@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResolveDesk — Developer Documentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });
+    </script>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="topnav">
+        <div class="topnav-inner">
+            <div class="brand">
+                <i class="fa-solid fa-ticket-simple"></i>
+                <span>ResolveDesk</span>
+                <span class="badge">Developer Docs</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="active"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="architecture.html"><i class="fa-solid fa-cubes"></i> Architecture</a>
+                <a href="screens.html"><i class="fa-solid fa-desktop"></i> UI Screens</a>
+                <a href="backend.html"><i class="fa-solid fa-server"></i> Backend APIs</a>
+                <a href="patterns.html"><i class="fa-solid fa-wand-magic-sparkles"></i> Design Patterns</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1>ResolveDesk Developer Documentation</h1>
+            <p class="hero-subtitle">
+                A comprehensive code review guide for understanding, extending, and presenting the ResolveDesk enterprise support ticketing platform.
+            </p>
+            <div class="hero-badges">
+                <span class="tech-badge">.NET 8</span>
+                <span class="tech-badge">Angular 17</span>
+                <span class="tech-badge">YARP Gateway</span>
+                <span class="tech-badge">EF Core + SQLite</span>
+                <span class="tech-badge">MassTransit InMemory</span>
+                <span class="tech-badge">JWT Auth</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Cards -->
+    <main class="container">
+        <section class="section">
+            <h2 class="section-title"><i class="fa-solid fa-diagram-project"></i> System Overview</h2>
+            <p class="section-desc">ResolveDesk is a microservices-based support ticketing system with 3 .NET backend services behind a YARP reverse proxy gateway and an Angular 17 SPA frontend.</p>
+
+            <div class="mermaid-wrapper">
+                <pre class="mermaid">
+graph LR
+    subgraph Frontend
+        UI["Angular 17 SPA<br>Port: 4300"]
+    end
+    subgraph API Gateway
+        GW["YARP Reverse Proxy<br>Port: 5100"]
+    end
+    subgraph Backend Microservices
+        ID["Identity Service<br>Port: 5101"]
+        TC["Ticket Core Service<br>Port: 5103"]
+    end
+    subgraph Data Layer
+        IDDB[("SQLite: identity.db")]
+        TCDB[("SQLite: tickets.db")]
+        EB["MassTransit<br>InMemory Bus"]
+    end
+    
+    UI -->|All API calls| GW
+    GW -->|/api/auth/*| ID
+    GW -->|/api/tickets/*| TC
+    ID --> IDDB
+    TC --> TCDB
+    TC -->|Publish events| EB
+    EB -->|Consume events| TC
+                </pre>
+            </div>
+        </section>
+
+        <!-- Quick Navigation Cards -->
+        <section class="section">
+            <h2 class="section-title"><i class="fa-solid fa-compass"></i> Documentation Guide</h2>
+            <div class="card-grid">
+                <a href="architecture.html" class="doc-card">
+                    <div class="doc-card-icon"><i class="fa-solid fa-cubes"></i></div>
+                    <h3>Architecture & Infrastructure</h3>
+                    <p>Explore the microservices topology, database strategy (SQLite/SQL Server dual provider), YARP gateway routing, MassTransit InMemory event bus, and JWT authentication pipeline.</p>
+                </a>
+                <a href="screens.html" class="doc-card">
+                    <div class="doc-card-icon" style="background: #ecfdf5; color: #059669;"><i class="fa-solid fa-desktop"></i></div>
+                    <h3>UI Screens & Role Walkthrough</h3>
+                    <p>Screenshots of every screen logged in as Admin, Support Agent, and Customer. Each annotated with the Angular component, template, and CSS responsible for rendering it.</p>
+                </a>
+                <a href="backend.html" class="doc-card">
+                    <div class="doc-card-icon" style="background: #fef3c7; color: #d97706;"><i class="fa-solid fa-server"></i></div>
+                    <h3>Backend API Controllers</h3>
+                    <p>Full code walkthrough of AuthController and TicketsController — covering registration, JWT generation, RBAC authorization, CRUD operations, and MassTransit event publishing.</p>
+                </a>
+                <a href="patterns.html" class="doc-card">
+                    <div class="doc-card-icon" style="background: #f3e8ff; color: #7c3aed;"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <h3>Design Patterns Portfolio</h3>
+                    <p>Catalog of software engineering patterns: Clean Architecture, API Gateway, Repository, Pub/Sub, Reactive Signals State Store, and Intercepting Filter.</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Technology Stack Table -->
+        <section class="section">
+            <h2 class="section-title"><i class="fa-solid fa-layer-group"></i> Technology Stack</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Layer</th>
+                            <th>Technology</th>
+                            <th>Purpose</th>
+                            <th>Key Files</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Frontend</strong></td>
+                            <td>Angular 17 (Standalone Components, Signals)</td>
+                            <td>Reactive SPA dashboard with role-based views</td>
+                            <td><code>src/ResolveDesk.UI/</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>API Gateway</strong></td>
+                            <td>YARP (Yet Another Reverse Proxy)</td>
+                            <td>Single entry point routing to microservices</td>
+                            <td><code>src/ResolveDesk.Gateway/appsettings.json</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Identity Service</strong></td>
+                            <td>ASP.NET Core Identity + JWT Bearer</td>
+                            <td>User registration, login, role management</td>
+                            <td><code>src/ResolveDesk.Services.Identity/</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ticket Service</strong></td>
+                            <td>ASP.NET Core Web API + MassTransit</td>
+                            <td>CRUD tickets, responses, status transitions, event publishing</td>
+                            <td><code>src/ResolveDesk.Services.TicketCore/</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Database</strong></td>
+                            <td>EF Core 8 — SQLite (local) / SQL Server (prod)</td>
+                            <td>Dual-provider strategy via connection string detection</td>
+                            <td><code>Program.cs</code> in each service</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Message Bus</strong></td>
+                            <td>MassTransit InMemory Transport</td>
+                            <td>Decoupled event publishing without external infrastructure</td>
+                            <td><code>Consumers/</code> folder in TicketCore</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Authentication</strong></td>
+                            <td>JWT Bearer Tokens (HS256)</td>
+                            <td>Stateless API authentication with role claims</td>
+                            <td><code>AuthController.cs</code>, <code>auth.interceptor.ts</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Port Architecture -->
+        <section class="section">
+            <h2 class="section-title"><i class="fa-solid fa-network-wired"></i> Port Configuration</h2>
+            <div class="port-grid">
+                <div class="port-card">
+                    <div class="port-number">4300</div>
+                    <div class="port-name">Angular UI</div>
+                    <div class="port-desc">ng serve --port 4300</div>
+                </div>
+                <div class="port-card">
+                    <div class="port-number">5100</div>
+                    <div class="port-name">YARP Gateway</div>
+                    <div class="port-desc">Single API entry point</div>
+                </div>
+                <div class="port-card">
+                    <div class="port-number">5101</div>
+                    <div class="port-name">Identity Service</div>
+                    <div class="port-desc">/api/auth/* endpoints</div>
+                </div>
+                <div class="port-card">
+                    <div class="port-number">5103</div>
+                    <div class="port-name">Ticket Core</div>
+                    <div class="port-desc">/api/tickets/* endpoints</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seeded Credentials -->
+        <section class="section">
+            <h2 class="section-title"><i class="fa-solid fa-user-shield"></i> Seeded Demo Credentials</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>Role</th><th>Email</th><th>Password</th><th>Permissions</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="role-badge role-admin">Admin</span></td>
+                            <td><code>admin@resolvedesk.com</code></td>
+                            <td><code>Admin@123</code></td>
+                            <td>View all tickets, change status, reply, create tickets</td>
+                        </tr>
+                        <tr>
+                            <td><span class="role-badge role-support">Support</span></td>
+                            <td><code>support@resolvedesk.com</code></td>
+                            <td><code>Support@123</code></td>
+                            <td>View all tickets, change status, reply</td>
+                        </tr>
+                        <tr>
+                            <td><span class="role-badge role-customer">Customer</span></td>
+                            <td><code>customer@resolvedesk.com</code></td>
+                            <td><code>Customer@123</code></td>
+                            <td>View own tickets only, create tickets, reply</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2026 ResolveDesk Developer Documentation. Built for code review and architectural presentation.</p>
+    </footer>
+</body>
+</html>

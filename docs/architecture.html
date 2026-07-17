@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture & Infrastructure — ResolveDesk Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });</script>
+</head>
+<body>
+    <nav class="topnav">
+        <div class="topnav-inner">
+            <div class="brand"><i class="fa-solid fa-ticket-simple"></i><span>ResolveDesk</span><span class="badge">Developer Docs</span></div>
+            <div class="nav-links">
+                <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="architecture.html" class="active"><i class="fa-solid fa-cubes"></i> Architecture</a>
+                <a href="screens.html"><i class="fa-solid fa-desktop"></i> UI Screens</a>
+                <a href="backend.html"><i class="fa-solid fa-server"></i> Backend APIs</a>
+                <a href="patterns.html"><i class="fa-solid fa-wand-magic-sparkles"></i> Design Patterns</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero" style="padding: 48px 24px 40px;">
+        <div class="hero-content">
+            <h1>Architecture & Infrastructure</h1>
+            <p class="hero-subtitle">Deep dive into the microservices topology, database strategy, YARP gateway, MassTransit event bus, and JWT authentication pipeline.</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- YARP Gateway -->
+        <section class="section">
+            <h2 class="section-title"><i class="fa-solid fa-shield-halved"></i> YARP API Gateway</h2>
+            <p class="section-desc">The Gateway is a lightweight ASP.NET Core application using YARP (Yet Another Reverse Proxy) to route all frontend requests to the correct backend microservice.</p>
+
+            <div class="mermaid-wrapper">
+                <pre class="mermaid">
+graph LR
+    Client["Angular UI :4300"] -->|"All API calls to :5100"| GW["YARP Gateway :5100"]
+    GW -->|"/api/auth/*"| ID["Identity Service :5101"]
+    GW -->|"/api/tickets/*"| TC["Ticket Core :5103"]
+                </pre>
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">YARP Route Configuration</h3>
+            <div class="code-block">
+<span class="comment">// src/ResolveDesk.Gateway/appsettings.json</span>
+{
+  <span class="string">"ReverseProxy"</span>: {
+    <span class="string">"Routes"</span>: {
+      <span class="string">"auth-route"</span>: {
+        <span class="string">"ClusterId"</span>: <span class="string">"identity-cluster"</span>,
+        <span class="string">"Match"</span>: { <span class="string">"Path"</span>: <span class="string">"/api/auth/{**catch-all}"</span> }
+      },
+      <span class="string">"tickets-route"</span>: {
+        <span class="string">"ClusterId"</span>: <span class="string">"tickets-cluster"</span>,
+        <span class="string">"Match"</span>: { <span class="string">"Path"</span>: <span class="string">"/api/tickets/{**catch-all}"</span> }
+      }
+    },
+    <span class="string">"Clusters"</span>: {
+      <span class="string">"identity-cluster"</span>: { <span class="string">"Address"</span>: <span class="string">"http://localhost:5101"</span> },
+      <span class="string">"tickets-cluster"</span>: { <span class="string">"Address"</span>: <span class="string">"http://localhost:5103"</span> }
+    }
+  }
+}
+            </div>
+
+            <div class="info-box tip">
+                <i class="fa-solid fa-lightbulb"></i>
+                <div><strong>Why YARP?</strong> It allows a single CORS-friendly URL for the Angular frontend while abstracting the multi-port backend layout. The Angular services only know about <code>localhost:5100</code>.</div>
+            </div>
+        </section>
+
+        <!-- Database Strategy -->
+        <section class="section" style="border-top: 1px solid var(--gray-200); padding-top: 48px;">
+            <h2 class="section-title"><i class="fa-solid fa-database"></i> Database Strategy (EF Core Dual Provider)</h2>
+            <p class="section-desc">Both microservices use Entity Framework Core 8 with a dual-provider pattern: SQLite for zero-install local demos, SQL Server for production environments.</p>
+
+            <div class="mermaid-wrapper">
+                <pre class="mermaid">
+graph TD
+    subgraph Identity Service
+        IDP["Program.cs"] -->|"Connection string check"| DEC{"Contains 'Data Source='?"}
+        DEC -->|Yes| SQLITE1["UseSqlite(identity.db)"]
+        DEC -->|No| SQLSRV1["UseSqlServer(connStr)"]
+    end
+    subgraph Ticket Core Service
+        TCP["Program.cs"] -->|"Connection string check"| DEC2{"Contains 'Data Source='?"}
+        DEC2 -->|Yes| SQLITE2["UseSqlite(tickets.db)"]
+        DEC2 -->|No| SQLSRV2["UseSqlServer(connStr)"]
+    end
+                </pre>
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Dual Provider Detection Code</h3>
+            <div class="code-block">
+<span class="comment">// Program.cs — Dual DB provider setup</span>
+<span class="keyword">var</span> connectionString = builder.Configuration.GetConnectionString(<span class="string">"DefaultConnection"</span>);
+<span class="keyword">var</span> isSqlite = connectionString.Contains(<span class="string">"Data Source="</span>);
+
+<span class="keyword">if</span> (isSqlite) {
+    options.UseSqlite(connectionString); <span class="comment">// Zero-install local mode</span>
+} <span class="keyword">else</span> {
+    options.UseSqlServer(connectionString); <span class="comment">// Production/staging</span>
+}
+            </div>
+
+            <div class="info-box note">
+                <i class="fa-solid fa-info-circle"></i>
+                <div><strong>Auto-Seeding:</strong> On startup, if the database is empty, <code>Program.cs</code> seeds demo users (Admin, Support, Customer) and 8 sample tickets with pre-written conversation threads. The SQLite <code>.db</code> files are created automatically in the project root.</div>
+            </div>
+        </section>
+
+        <!-- MassTransit Event Bus -->
+        <section class="section" style="border-top: 1px solid var(--gray-200); padding-top: 48px;">
+            <h2 class="section-title"><i class="fa-solid fa-circle-nodes"></i> MassTransit InMemory Event Bus</h2>
+            <p class="section-desc">MassTransit is a .NET message bus framework. In this application, it runs with the <strong>InMemory transport</strong> — no RabbitMQ, no Docker, no external infrastructure needed.</p>
+
+            <div class="mermaid-wrapper">
+                <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant Ctrl as TicketsController
+    participant Bus as MassTransit Bus (InMemory)
+    participant C1 as TicketCreatedConsumer
+    participant C2 as TicketStatusChangedConsumer
+
+    Ctrl->>Bus: Publish ITicketCreatedEvent
+    Bus-->>C1: Deliver (in-process)
+    C1->>C1: Log notification simulation
+
+    Ctrl->>Bus: Publish ITicketStatusChangedEvent
+    Bus-->>C2: Deliver (in-process)
+    C2->>C2: Log status change notification
+                </pre>
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">MassTransit Registration</h3>
+            <div class="code-block">
+<span class="comment">// Program.cs — MassTransit InMemory configuration</span>
+builder.Services.AddMassTransit(x => {
+    x.AddConsumer&lt;<span class="type">TicketCreatedConsumer</span>&gt;();
+    x.AddConsumer&lt;<span class="type">TicketStatusChangedConsumer</span>&gt;();
+
+    x.UsingInMemory((context, cfg) => {
+        cfg.ConfigureEndpoints(context); <span class="comment">// Auto-register consumer endpoints</span>
+    });
+});
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Event Interfaces (Shared Contract)</h3>
+            <div class="code-block">
+<span class="comment">// src/ResolveDesk.Shared/Events/ITicketCreatedEvent.cs</span>
+<span class="keyword">public interface</span> <span class="type">ITicketCreatedEvent</span> {
+    Guid TicketId { get; }
+    <span class="type">string</span> CustomerId { get; }
+    <span class="type">string</span> Title { get; }
+    <span class="type">string</span> CustomerEmail { get; }
+    DateTime CreatedAt { get; }
+}
+            </div>
+
+            <div class="info-box warning">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <div><strong>InMemory Limitation:</strong> Messages are delivered in-process and are volatile — if the service restarts, unprocessed messages are lost. This is ideal for local demos but should be replaced with RabbitMQ or Azure Service Bus in production.</div>
+            </div>
+        </section>
+
+        <!-- JWT Auth -->
+        <section class="section" style="border-top: 1px solid var(--gray-200); padding-top: 48px;">
+            <h2 class="section-title"><i class="fa-solid fa-key"></i> JWT Authentication Pipeline</h2>
+            <p class="section-desc">Authentication uses HS256-signed JWT Bearer tokens. The token carries user identity claims (sub, email, name, roles) that the backend validates on every request.</p>
+
+            <div class="mermaid-wrapper">
+                <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor User
+    participant UI as Angular UI
+    participant INT as auth.interceptor.ts
+    participant GW as YARP Gateway
+    participant API as Backend Service
+    
+    User->>UI: Logs in, receives JWT
+    UI->>UI: Stores token in localStorage
+    UI->>INT: HTTP request intercepted
+    INT->>INT: Clones request, adds Authorization: Bearer {token}
+    INT->>GW: Sends authenticated request
+    GW->>API: Proxies to backend
+    API->>API: Validates JWT signature & extracts claims
+    API-->>UI: Returns authorized data
+                </pre>
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Frontend Interceptor</h3>
+            <div class="code-block">
+<span class="comment">// src/ResolveDesk.UI/src/app/interceptors/auth.interceptor.ts</span>
+<span class="keyword">export const</span> authInterceptor: <span class="type">HttpInterceptorFn</span> = (req, next) => {
+    <span class="keyword">const</span> authService = inject(<span class="type">AuthService</span>);
+    <span class="keyword">const</span> currentUser = authService.currentUser(); <span class="comment">// Read Signal</span>
+
+    <span class="keyword">if</span> (currentUser && currentUser.token) {
+        req = req.clone({
+            setHeaders: { Authorization: `Bearer ${currentUser.token}` }
+        });
+    }
+    <span class="keyword">return</span> next(req);
+};
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 ResolveDesk Developer Documentation.</p>
+    </footer>
+</body>
+</html>

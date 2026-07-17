@@ -1,0 +1,266 @@
+/* ============================
+   ResolveDesk Docs — Global CSS
+   ============================ */
+
+:root {
+    --navy: #0f172a;
+    --blue: #3b82f6;
+    --blue-dark: #2563eb;
+    --blue-light: #eff6ff;
+    --green: #059669;
+    --green-light: #ecfdf5;
+    --amber: #d97706;
+    --amber-light: #fef3c7;
+    --purple: #7c3aed;
+    --purple-light: #f3e8ff;
+    --red: #dc2626;
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-400: #94a3b8;
+    --gray-500: #64748b;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1e293b;
+    --gray-900: #0f172a;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    color: var(--gray-800);
+    background: var(--gray-50);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+code, pre, .code-block {
+    font-family: 'Fira Code', monospace;
+}
+
+a { color: var(--blue); text-decoration: none; }
+a:hover { color: var(--blue-dark); }
+
+/* ---- Top Nav ---- */
+.topnav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--navy);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+}
+.topnav-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; height: 56px;
+}
+.brand {
+    display: flex; align-items: center; gap: 10px;
+    color: white; font-weight: 700; font-size: 16px;
+}
+.brand i { color: var(--blue); font-size: 18px; }
+.badge {
+    background: var(--blue); color: white;
+    font-size: 10px; font-weight: 600; padding: 2px 8px;
+    border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.nav-links { display: flex; gap: 4px; }
+.nav-links a {
+    color: var(--gray-400); font-size: 13px; font-weight: 500;
+    padding: 8px 14px; border-radius: var(--radius);
+    transition: all 0.15s;
+}
+.nav-links a:hover, .nav-links a.active {
+    color: white; background: rgba(255,255,255,0.08);
+}
+
+/* ---- Hero ---- */
+.hero {
+    background: linear-gradient(135deg, var(--navy) 0%, #1e3a5f 50%, var(--blue-dark) 100%);
+    padding: 72px 24px 64px; text-align: center;
+}
+.hero-content { max-width: 800px; margin: 0 auto; }
+.hero h1 {
+    color: white; font-size: 36px; font-weight: 800;
+    letter-spacing: -0.5px; margin-bottom: 16px;
+}
+.hero-subtitle {
+    color: rgba(255,255,255,0.7); font-size: 16px;
+    max-width: 600px; margin: 0 auto 28px;
+}
+.hero-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.tech-badge {
+    background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85);
+    font-size: 12px; font-weight: 600; padding: 5px 14px;
+    border-radius: 99px; border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* ---- Container / Sections ---- */
+.container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+.section { padding: 48px 0; }
+.section-title {
+    font-size: 22px; font-weight: 700; color: var(--gray-900);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
+}
+.section-title i { color: var(--blue); }
+.section-desc {
+    color: var(--gray-500); font-size: 14px; max-width: 700px; margin-bottom: 32px;
+}
+
+/* ---- Card Grid ---- */
+.card-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+.doc-card {
+    display: block; padding: 28px;
+    background: white; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg); transition: all 0.2s;
+    box-shadow: var(--shadow);
+}
+.doc-card:hover {
+    border-color: var(--blue); box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+.doc-card-icon {
+    width: 48px; height: 48px; border-radius: var(--radius);
+    background: var(--blue-light); color: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 16px;
+}
+.doc-card h3 {
+    font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;
+}
+.doc-card p { font-size: 13px; color: var(--gray-500); line-height: 1.5; }
+
+/* ---- Port Grid ---- */
+.port-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;
+}
+.port-card {
+    background: white; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg); padding: 24px; text-align: center;
+    box-shadow: var(--shadow);
+}
+.port-number {
+    font-size: 32px; font-weight: 800; color: var(--blue);
+    font-family: 'Fira Code', monospace;
+}
+.port-name { font-size: 14px; font-weight: 700; color: var(--gray-800); margin-top: 4px; }
+.port-desc { font-size: 12px; color: var(--gray-400); margin-top: 4px; }
+
+/* ---- Tables ---- */
+.table-wrapper { overflow-x: auto; }
+table {
+    width: 100%; border-collapse: collapse;
+    background: white; border-radius: var(--radius-lg); overflow: hidden;
+    box-shadow: var(--shadow);
+}
+th {
+    background: var(--gray-100); color: var(--gray-700);
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; padding: 12px 16px; text-align: left;
+    border-bottom: 2px solid var(--gray-200);
+}
+td {
+    padding: 12px 16px; font-size: 13px; color: var(--gray-600);
+    border-bottom: 1px solid var(--gray-100);
+}
+td code {
+    background: var(--gray-100); padding: 2px 6px;
+    border-radius: 4px; font-size: 12px; color: var(--gray-700);
+}
+
+/* ---- Role Badges ---- */
+.role-badge {
+    display: inline-block; padding: 3px 12px; border-radius: 99px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.role-admin { background: #fef2f2; color: #dc2626; }
+.role-support { background: var(--blue-light); color: var(--blue); }
+.role-customer { background: var(--green-light); color: var(--green); }
+
+/* ---- Mermaid ---- */
+.mermaid-wrapper {
+    background: white; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg); padding: 32px; margin-top: 24px;
+    box-shadow: var(--shadow); overflow-x: auto;
+}
+
+/* ---- Code Blocks ---- */
+.code-block {
+    background: var(--gray-900); color: #93c5fd;
+    padding: 20px 24px; border-radius: var(--radius);
+    font-size: 12px; line-height: 1.7; overflow-x: auto;
+    margin: 16px 0; box-shadow: var(--shadow);
+}
+.code-block .comment { color: var(--gray-500); }
+.code-block .keyword { color: #c084fc; }
+.code-block .string { color: #86efac; }
+.code-block .type { color: #67e8f9; }
+
+/* ---- Screenshot ---- */
+.screenshot-card {
+    background: white; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg); overflow: hidden;
+    box-shadow: var(--shadow); margin-bottom: 32px;
+}
+.screenshot-card img {
+    width: 100%; display: block;
+    border-bottom: 1px solid var(--gray-200);
+}
+.screenshot-card .caption {
+    padding: 20px 24px;
+}
+.screenshot-card .caption h4 {
+    font-size: 15px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px;
+}
+.screenshot-card .caption p {
+    font-size: 13px; color: var(--gray-500); line-height: 1.5;
+}
+
+/* ---- Info Boxes ---- */
+.info-box {
+    padding: 16px 20px; border-radius: var(--radius);
+    font-size: 13px; line-height: 1.6; margin: 16px 0;
+    display: flex; gap: 12px; align-items: flex-start;
+}
+.info-box i { font-size: 16px; margin-top: 2px; flex-shrink: 0; }
+.info-box.note { background: var(--blue-light); color: #1e40af; border: 1px solid #bfdbfe; }
+.info-box.warning { background: var(--amber-light); color: #92400e; border: 1px solid #fde68a; }
+.info-box.tip { background: var(--green-light); color: #065f46; border: 1px solid #a7f3d0; }
+
+/* ---- Pattern Cards ---- */
+.pattern-card {
+    background: white; border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg); padding: 24px;
+    box-shadow: var(--shadow); margin-bottom: 20px;
+}
+.pattern-card h3 {
+    font-size: 16px; font-weight: 700; color: var(--gray-900);
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.pattern-card h3 i { color: var(--blue); }
+.pattern-card .where { font-size: 12px; color: var(--gray-400); margin-bottom: 8px; }
+.pattern-card p { font-size: 13px; color: var(--gray-600); line-height: 1.5; }
+
+/* ---- Footer ---- */
+.footer {
+    background: var(--navy); color: rgba(255,255,255,0.4);
+    text-align: center; padding: 24px; font-size: 12px;
+    margin-top: 48px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+    .nav-links { display: none; }
+    .hero h1 { font-size: 24px; }
+    .card-grid { grid-template-columns: 1fr; }
+    .port-grid { grid-template-columns: repeat(2, 1fr); }
+}

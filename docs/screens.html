@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Screens & Role Walkthrough — ResolveDesk Docs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="topnav">
+        <div class="topnav-inner">
+            <div class="brand"><i class="fa-solid fa-ticket-simple"></i><span>ResolveDesk</span><span class="badge">Developer Docs</span></div>
+            <div class="nav-links">
+                <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="architecture.html"><i class="fa-solid fa-cubes"></i> Architecture</a>
+                <a href="screens.html" class="active"><i class="fa-solid fa-desktop"></i> UI Screens</a>
+                <a href="backend.html"><i class="fa-solid fa-server"></i> Backend APIs</a>
+                <a href="patterns.html"><i class="fa-solid fa-wand-magic-sparkles"></i> Design Patterns</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero" style="padding: 48px 24px 40px;">
+        <div class="hero-content">
+            <h1>UI Screens & Role Walkthrough</h1>
+            <p class="hero-subtitle">Screenshots of every screen with annotations on the Angular components, templates, and CSS responsible for rendering each view.</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- LOGIN PAGE -->
+        <section class="section">
+            <h2 class="section-title"><i class="fa-solid fa-right-to-bracket"></i> 1. Login Page</h2>
+            <p class="section-desc">The login screen is the entry point to the application. It supports email/password authentication and simulated OAuth (Google, GitHub).</p>
+
+            <div class="screenshot-card">
+                <img src="screenshots/01_login_page.png" alt="Login Page">
+                <div class="caption">
+                    <h4>Login Screen — Default State</h4>
+                    <p>Rendered by <code>LoginComponent</code> at route <code>/login</code>. Features a branded card with email/password fields, OAuth buttons, and demo credential hints.</p>
+                </div>
+            </div>
+
+            <div class="info-box note">
+                <i class="fa-solid fa-code"></i>
+                <div>
+                    <strong>Component:</strong> <code>src/ResolveDesk.UI/src/app/components/login/login.component.ts</code><br>
+                    <strong>Template:</strong> <code>login.component.html</code> | <strong>Styles:</strong> <code>login.component.css</code>
+                </div>
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">How It Works (Code)</h3>
+            <div class="code-block">
+<span class="comment">// login.component.ts — Form submission handler</span>
+onSubmit() {
+    <span class="keyword">this</span>.isLoading = <span class="keyword">true</span>;
+    <span class="keyword">this</span>.authService.login(<span class="keyword">this</span>.email, <span class="keyword">this</span>.password).subscribe({
+        next: (res) => {
+            <span class="keyword">this</span>.router.navigate([<span class="string">'/dashboard'</span>]);
+        },
+        error: (err) => {
+            <span class="keyword">this</span>.errorMessage = err.error?.error || <span class="string">'Authentication failed.'</span>;
+        }
+    });
+}
+            </div>
+            <div class="code-block">
+<span class="comment">// auth.service.ts — Posts to Gateway, stores JWT in localStorage</span>
+login(email: <span class="type">string</span>, password: <span class="type">string</span>): <span class="type">Observable</span>&lt;any&gt; {
+    <span class="keyword">return this</span>.http.post&lt;any&gt;(`${<span class="keyword">this</span>.apiUrl}/login`, { email, password }).pipe(
+        tap(res => {
+            localStorage.setItem(<span class="string">'resolvedesk_user'</span>, JSON.stringify(user));
+            <span class="keyword">this</span>.currentUser.set(user); <span class="comment">// Angular Signal update</span>
+        })
+    );
+}
+            </div>
+
+            <div class="info-box tip">
+                <i class="fa-solid fa-lightbulb"></i>
+                <div><strong>Key Detail:</strong> The <code>currentUser</code> property is an Angular 17 <strong>Signal</strong> (<code>signal&lt;User | null&gt;</code>), providing automatic change detection without Zone.js overhead. The JWT token stored in localStorage is automatically attached to every subsequent API call by <code>auth.interceptor.ts</code>.</div>
+            </div>
+        </section>
+
+        <!-- ADMIN DASHBOARD -->
+        <section class="section" style="border-top: 1px solid var(--gray-200); padding-top: 48px;">
+            <h2 class="section-title"><i class="fa-solid fa-shield-halved"></i> 2. Admin Dashboard</h2>
+            <p class="section-desc">The Administrator sees <strong>all tickets</strong> across the entire system, with full control to change statuses, reply, and manage the ticketing lifecycle.</p>
+
+            <div class="screenshot-card">
+                <img src="screenshots/03_dashboard_admin.png" alt="Admin Dashboard">
+                <div class="caption">
+                    <h4>Admin Dashboard — Full Ticket Overview</h4>
+                    <p>Shows KPI stats (Total, Open, In Progress, Closed), category/priority distribution bars, search/filter controls, and the complete ticket table. The <code>isAdminOrSupport()</code> check returns <code>true</code>, displaying status change dropdowns and the full ticket list.</p>
+                </div>
+            </div>
+
+            <div class="screenshot-card">
+                <img src="screenshots/05_ticket_detail_admin.png" alt="Admin Ticket Detail">
+                <div class="caption">
+                    <h4>Admin — Ticket Detail & Response Thread</h4>
+                    <p>Clicking a ticket row reveals the detail panel with the full conversation thread, status change dropdown (<code>Open → InProgress → Closed</code>), and a reply input field. The status dropdown is only visible to Admin/Support roles.</p>
+                </div>
+            </div>
+
+            <div class="info-box note">
+                <i class="fa-solid fa-code"></i>
+                <div>
+                    <strong>Component:</strong> <code>src/ResolveDesk.UI/src/app/components/dashboard/dashboard.component.ts</code><br>
+                    <strong>Template:</strong> <code>dashboard.component.html</code> | <strong>Styles:</strong> <code>dashboard.component.css</code>
+                </div>
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Role-Based Visibility (Code)</h3>
+            <div class="code-block">
+<span class="comment">// dashboard.component.ts — Role check for admin/support features</span>
+isAdminOrSupport(): <span class="type">boolean</span> {
+    <span class="keyword">if</span> (!<span class="keyword">this</span>.currentUser) <span class="keyword">return false</span>;
+    <span class="keyword">return this</span>.currentUser.role === <span class="string">'Admin'</span>
+        || <span class="keyword">this</span>.currentUser.role === <span class="string">'SupportStaff'</span>;
+}
+
+<span class="comment">// Used in template: *ngIf="isAdminOrSupport()" to show/hide status dropdown</span>
+            </div>
+
+            <div class="code-block">
+<span class="comment">// dashboard.component.ts — Stats calculation using Angular Signals pattern</span>
+calculateStats() {
+    <span class="keyword">this</span>.totalTicketsCount = <span class="keyword">this</span>.tickets.length;
+    <span class="keyword">this</span>.openTicketsCount = <span class="keyword">this</span>.tickets.filter(t => t.status === <span class="string">'Open'</span>).length;
+
+    <span class="comment">// Average resolution time for SLA metrics</span>
+    <span class="keyword">const</span> closedTickets = <span class="keyword">this</span>.tickets.filter(t => t.status === <span class="string">'Closed'</span> && t.resolvedAt);
+    <span class="keyword">const</span> totalHours = closedTickets.reduce((sum, t) => {
+        <span class="keyword">return</span> sum + (resolved - created) / (1000 * 60 * 60);
+    }, 0);
+    <span class="keyword">this</span>.averageResolutionHours = Math.round(totalHours / closedTickets.length);
+}
+            </div>
+        </section>
+
+        <!-- SUPPORT DASHBOARD -->
+        <section class="section" style="border-top: 1px solid var(--gray-200); padding-top: 48px;">
+            <h2 class="section-title"><i class="fa-solid fa-headset"></i> 3. Support Agent Dashboard</h2>
+            <p class="section-desc">The Support Agent has the same full view as Admin — can see all tickets, change statuses, and reply. The key difference is organizational: Admins manage the system while Agents handle day-to-day resolution.</p>
+
+            <div class="screenshot-card">
+                <img src="screenshots/03_dashboard_support.png" alt="Support Dashboard">
+                <div class="caption">
+                    <h4>Support Agent Dashboard</h4>
+                    <p>Identical layout to Admin. The <code>isAdminOrSupport()</code> check applies to both roles, granting full ticket visibility and status management capabilities.</p>
+                </div>
+            </div>
+
+            <div class="screenshot-card">
+                <img src="screenshots/05_ticket_detail_support.png" alt="Support Ticket Detail">
+                <div class="caption">
+                    <h4>Support Agent — Ticket Detail & Reply</h4>
+                    <p>When a support agent replies to an "Open" ticket, the backend <strong>automatically transitions</strong> the status to "InProgress" and publishes a <code>TicketStatusChangedEvent</code> via MassTransit.</p>
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <div><strong>Auto-Status Transition:</strong> In <code>TicketsController.CreateResponse()</code>, if the responder is Admin/Support and the ticket is "Open", the status is automatically set to "InProgress". This is a business rule enforced server-side, not client-side.</div>
+            </div>
+        </section>
+
+        <!-- CUSTOMER DASHBOARD -->
+        <section class="section" style="border-top: 1px solid var(--gray-200); padding-top: 48px;">
+            <h2 class="section-title"><i class="fa-solid fa-user"></i> 4. Customer Dashboard</h2>
+            <p class="section-desc">Customers see <strong>only their own tickets</strong>. They can create new tickets, reply to existing ones, but <strong>cannot change ticket status</strong>.</p>
+
+            <div class="screenshot-card">
+                <img src="screenshots/03_dashboard_customer.png" alt="Customer Dashboard">
+                <div class="caption">
+                    <h4>Customer Dashboard — Filtered View</h4>
+                    <p>The ticket list is filtered server-side: the backend only returns tickets where <code>CustomerId == userId</code>. KPI stats reflect only the customer's own tickets.</p>
+                </div>
+            </div>
+
+            <div class="screenshot-card">
+                <img src="screenshots/05_ticket_detail_customer.png" alt="Customer Ticket Detail">
+                <div class="caption">
+                    <h4>Customer — Ticket Detail (No Status Dropdown)</h4>
+                    <p>The status dropdown is hidden because <code>isAdminOrSupport()</code> returns <code>false</code>. Customer can only view the conversation and add replies.</p>
+                </div>
+            </div>
+
+            <div class="screenshot-card">
+                <img src="screenshots/06_create_ticket_customer.png" alt="Create Ticket Modal">
+                <div class="caption">
+                    <h4>Create Ticket Modal</h4>
+                    <p>The customer clicks "New Ticket" to open a modal with Title, Description, Category (Software/Hardware/Network/etc.), and Priority (Critical/High/Medium/Low) fields.</p>
+                </div>
+            </div>
+
+            <h3 style="font-size:15px; font-weight:700; margin: 24px 0 12px;">Server-Side Ticket Filtering (Code)</h3>
+            <div class="code-block">
+<span class="comment">// TicketsController.cs — Only returns customer's own tickets if not admin/support</span>
+[HttpGet]
+<span class="keyword">public async</span> Task&lt;ActionResult&gt; GetTickets() {
+    IQueryable&lt;<span class="type">Ticket</span>&gt; query = _context.Tickets.Include(t => t.Responses);
+    
+    <span class="keyword">if</span> (!IsAdminOrSupport()) {
+        query = query.Where(t => t.CustomerId == userId); <span class="comment">// Filter by JWT claim</span>
+    }
+    
+    <span class="keyword">var</span> tickets = <span class="keyword">await</span> query.OrderByDescending(t => t.CreatedAt).ToListAsync();
+    <span class="keyword">return</span> Ok(tickets.Select(MapToTicketDto));
+}
+            </div>
+
+            <div class="code-block">
+<span class="comment">// dashboard.component.ts — Create ticket handler</span>
+onCreateTicket() {
+    <span class="keyword">this</span>.ticketService.createTicket(
+        <span class="keyword">this</span>.newTicketTitle,
+        <span class="keyword">this</span>.newTicketDescription,
+        <span class="keyword">this</span>.newTicketCategory,  <span class="comment">// e.g. 'Software', 'Hardware'</span>
+        <span class="keyword">this</span>.newTicketPriority   <span class="comment">// e.g. 'Critical', 'Medium'</span>
+    ).subscribe({
+        next: () => {
+            <span class="keyword">this</span>.showCreateModal = <span class="keyword">false</span>;
+            <span class="keyword">this</span>.loadTickets(); <span class="comment">// Refresh ticket list</span>
+        }
+    });
+}
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 ResolveDesk Developer Documentation.</p>
+    </footer>
+</body>
+</html>
